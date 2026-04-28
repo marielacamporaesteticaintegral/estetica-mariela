@@ -824,11 +824,6 @@ function applyRoles(){
 const fmt=n=>'$'+Number(n||0).toLocaleString('es-AR');
 const fmtDate=d=>{if(!d)return '–';const[y,m,dd]=d.split('-');return `${dd}/${m}/${y}`;};
 const fmtHora=d=>{const h=new Date(d);return h.toTimeString().slice(0,5);};
-function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+(type||'');setTimeout(()=>t.className='',2800);}
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
-function addMins(t,m){const[h,mn]=t.split(':').map(Number);const tot=h*60+mn+m;return `${String(Math.floor(tot/60)).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`;}
 function getCliente(id){return(S.get('clientes')||[]).find(c=>c.id===id)||{};}
 function getEmpleado(id){return(S.get('equipo')||[]).find(e=>e.id===id)||{};}
 function getServicio(id){return(S.get('servicios')||[]).find(s=>s.id===id)||{};}
@@ -882,7 +877,9 @@ function renderPage(p){
 // ── SAMPLE DATA ────────────────────────────────────────────────────
 function initApp(){
   if(!S.get('clientes'))initSampleData();
-  if(!S.get('servicios')||(S.get('servicios')||[]).length===0)seedServicios();
+  // Servicios siempre presentes: si hay menos de 21 o no existen, re-seed
+  var svcs=S.get('servicios')||[];
+  if(svcs.length<21)seedServicios();
   const d=new Date();
   document.getElementById('topbarDate').textContent=d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('dAnio').textContent=d.getFullYear();
