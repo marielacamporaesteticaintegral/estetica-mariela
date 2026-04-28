@@ -725,95 +725,124 @@ tr:hover td{background:var(--gray-50)}
 
 <div id="toast"></div>
 <script>
-// ── SUPABASE CONFIG ──────────────────────────────────────────────
+// ── SUPABASE CONFIG ──────────────────────────────────────────────────
 const SUPABASE_URL = 'https://ztqldxoohxzkddjiwyjo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0cWxkeG9vaHh6a2Rkaml3eWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMzM2ODksImV4cCI6MjA5MjkwOTY4OX0.XySy_FCtuLl1ks9E3tRdOWuYczjO2ze8k9CDaE2Wi_I';
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ── STORE: localStorage (primario) + Supabase (backup nube) ──────────
+// ── STORE ────────────────────────────────────────────────────────────
+// Arquitectura: localStorage como fuente primaria (instantaneo, sin red),
+// Supabase como backup en la nube (asincrono, no bloquea).
+const _P = 'mc2_'; // prefijo localStorage
 const _cache = {};
-const _LS = 'mc_'; // prefijo localStorage
+
 const S = {
-  get: k => (_cache[k] !== undefined ? _cache[k] : null),
-  set: (k, v) => {
-    _cache[k] = v;
-    // 1. localStorage: sincrono, siempre funciona
-    try { localStorage.setItem(_LS+k, JSON.stringify(v)); } catch(e) {}
-    // 2. Supabase: backup en la nube, asincrono
-    _sb.from('app_data').upsert({key:k, value:v, updated_at:new Date().toISOString()})
-      .then(({error})=>{ if(error) console.warn('Supabase sync:', error.message); });
-  },
-  loadAll: async () => {
-    // Paso 1: cargar localStorage al cache (fallback confiable, instantaneo)
+  // Lee: cache → localStorage → null
+  get(k) {
+    if (_cache[k] !== undefined) return _cache[k];
     try {
-      for(let i=0;i<localStorage.length;i++){
-        const k=localStorage.key(i);
-        if(k&&k.startsWith(_LS)){
-          try{ _cache[k.slice(_LS.length)]=JSON.parse(localStorage.getItem(k)); }catch(e){}
+      const v = localStorage.getItem(_P + k);
+      if (v !== null) { _cache[k] = JSON.parse(v); return _cache[k]; }
+    } catch(e) {}
+    return null;
+  },
+
+  // Escribe: cache + localStorage (sincrono) y Supabase (asincrono)
+  set(k, v) {
+    _cache[k] = v;
+    try { localStorage.setItem(_P + k, JSON.stringify(v)); } catch(e) {}
+    _sb.from('app_data').upsert({key: k, value: v, updated_at: new Date().toISOString()})
+      .then(({error}) => { if (error) console.warn('[Supabase write]', error.message); })
+      .catch(() => {});
+  },
+
+  // Carga localStorage al cache (sincrono, instantaneo)
+  loadLocal() {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(_P)) {
+          try { _cache[k.slice(_P.length)] = JSON.parse(localStorage.getItem(k)); } catch(e) {}
         }
       }
-    } catch(e){}
-    // Paso 2: intentar Supabase (puede tener datos mas recientes / otro dispositivo)
-    try {
-      const {data,error}=await _sb.from('app_data').select('key,value');
-      if(!error&&data&&data.length>0){
-        data.forEach(r=>{
-          _cache[r.key]=r.value;
-          try{localStorage.setItem(_LS+r.key,JSON.stringify(r.value));}catch(e){}
-        });
-        console.log('Datos cargados desde Supabase ('+data.length+' claves)');
-      } else {
-        console.log('Usando datos locales (Supabase vacio o sin conexion)');
-      }
-    } catch(e){ console.warn('Supabase no disponible, usando localStorage'); }
-    return true;
+    } catch(e) {}
   },
-  clearAll: async () => {
-    try{
-      const ks=[];
-      for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(_LS))ks.push(k);}
-      ks.forEach(k=>localStorage.removeItem(k));
-    }catch(e){}
-    try{ await _sb.from('app_data').delete().neq('key','__placeholder__'); }catch(e){}
-    Object.keys(_cache).forEach(k=>delete _cache[k]);
+
+  // Sincroniza con Supabase en segundo plano (no bloquea UI)
+  syncCloud() {
+    _sb.from('app_data').select('key,value')
+      .then(({data, error}) => {
+        if (error || !data || !data.length) return;
+        let changed = false;
+        data.forEach(r => {
+          // Solo actualizar si Supabase tiene datos mas recientes
+          _cache[r.key] = r.value;
+          try { localStorage.setItem(_P + r.key, JSON.stringify(r.value)); } catch(e) {}
+          changed = true;
+        });
+        if (changed && typeof currentPage !== 'undefined') {
+          renderPage(currentPage); // re-render pagina actual con datos cloud
+        }
+      })
+      .catch(() => {});
+  },
+
+  clearAll() {
+    try {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(_P)) keys.push(k);
+      }
+      keys.forEach(k => localStorage.removeItem(k));
+    } catch(e) {}
+    _sb.from('app_data').delete().neq('key','__placeholder__').catch(()=>{});
+    Object.keys(_cache).forEach(k => delete _cache[k]);
   }
 };
-function nid(type){const ids=S.get('nextId')||{};const n=ids[type]||1;ids[type]=n+1;S.set('nextId',ids);return n;}
 
-// ── AUTH ───────────────────────────────────────────────────────────
-const USERS=[
-  {user:'admin',pass:'admin123',name:'Administrador',role:'admin'},
-  {user:'maria',pass:'maria123',name:'María Suárez',role:'profesional',empleadoId:1},
-  {user:'daniela',pass:'dani123',name:'Daniela Castro',role:'profesional',empleadoId:2},
-  {user:'romina',pass:'romi123',name:'Romina Vega',role:'profesional',empleadoId:3},
+function nid(type) { const ids=S.get('nextId')||{}; const n=ids[type]||1; ids[type]=n+1; S.set('nextId',ids); return n; }
+
+// ── AUTH ─────────────────────────────────────────────────────────────
+const USERS = [
+  {user:'admin',    pass:'admin123', name:'Administrador',   role:'admin'},
+  {user:'maria',   pass:'maria123', name:'María Suárez',     role:'profesional', empleadoId:1},
+  {user:'daniela', pass:'dani123',  name:'Daniela Castro',   role:'profesional', empleadoId:2},
+  {user:'romina',  pass:'romi123',  name:'Romina Vega',      role:'profesional', empleadoId:3},
 ];
-let CU=null; // current user
+let CU = null;
 
-async function doLogin(){
-  const u=document.getElementById('loginUser').value.trim();
-  const p=document.getElementById('loginPass').value.trim();
-  const found=USERS.find(x=>x.user===u&&x.pass===p);
-  if(!found){document.getElementById('loginError').textContent='Usuario o contraseña incorrectos';return;}
-  // Mostrar loading
-  const btn=document.querySelector('.btn-login');
-  const origTxt=btn.textContent;
-  btn.textContent='Conectando...';btn.disabled=true;
-  document.getElementById('loginError').textContent='';
-  // Cargar datos desde Supabase
-  await S.loadAll();
-  btn.textContent=origTxt;btn.disabled=false;
-  CU=found;
-  document.getElementById('loginPage').style.display='none';
-  document.getElementById('app').style.display='flex';
-  document.getElementById('sidebarName').textContent=found.name;
-  document.getElementById('sidebarAvatar').textContent=found.name[0].toUpperCase();
-  document.getElementById('sidebarRole').textContent=found.role==='admin'?'Administrador':'Profesional';
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  const found = USERS.find(x => x.user === u && x.pass === p);
+  if (!found) { document.getElementById('loginError').textContent = 'Usuario o contraseña incorrectos'; return; }
+
+  // 1. Cargar localStorage al cache — instantaneo, sin esperar red
+  S.loadLocal();
+
+  // 2. Mostrar la app inmediatamente
+  CU = found;
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('sidebarName').textContent = found.name;
+  document.getElementById('sidebarAvatar').textContent = found.name[0].toUpperCase();
+  document.getElementById('sidebarRole').textContent = found.role === 'admin' ? 'Administrador' : 'Profesional';
   applyRoles();
   initApp();
+
+  // 3. Sincronizar con Supabase en segundo plano (actualiza si hay datos mas recientes)
+  S.syncCloud();
 }
-document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-function doLogout(){CU=null;document.getElementById('app').style.display='none';document.getElementById('loginPage').style.display='flex';document.getElementById('loginError').textContent='';}
+
+function doLogout() {
+  CU = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('loginError').textContent = '';
+}
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 function applyRoles(){
   const isAdmin=CU&&CU.role==='admin';
