@@ -248,7 +248,6 @@ tr:hover td{background:var(--gray-50)}
     <div class="avatar-sm" id="sidebarAvatar">A</div>
     <div><div class="user-name" id="sidebarName">Admin</div><div class="user-role" id="sidebarRole">Administrador</div></div>
     <button class="btn-logout" onclick="doLogout()" title="Salir">⏻</button>
-    <button class="btn-logout" onclick="resetData()" title="Reiniciar datos de ejemplo" style="font-size:.85rem">🔄</button>
   </div>
 </div>
 
@@ -774,13 +773,6 @@ document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='
 document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 function doLogout(){CU=null;document.getElementById('app').style.display='none';document.getElementById('loginPage').style.display='flex';document.getElementById('loginError').textContent='';}
 
-async function resetData(){
-  if(!confirm('¿Reiniciar todos los datos de ejemplo? Se perderán los cambios guardados.'))return;
-  showToast('Limpiando datos...','');
-  await S.clearAll();
-  showToast('Datos reiniciados. Recargando...','success');
-  setTimeout(()=>location.reload(),1200);
-}
 function applyRoles(){
   const isAdmin=CU&&CU.role==='admin';
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'':'none');
@@ -847,11 +839,38 @@ function renderPage(p){
 // ── SAMPLE DATA ────────────────────────────────────────────────────
 function initApp(){
   if(!S.get('clientes'))initSampleData();
+  if(!S.get('servicios')||(S.get('servicios')||[]).length===0)seedServicios();
   const d=new Date();
   document.getElementById('topbarDate').textContent=d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('dAnio').textContent=d.getFullYear();
   checkStockAlerts();
   goTo('dashboard');
+}
+
+function seedServicios(){
+  S.set('servicios',[
+    {id:1,nombre:'Higiene facial profunda',categoria:'Facial Avanzado',duracion:60,precio:82000,descripcion:'Limpieza profunda que elimina impurezas y células muertas, revitaliza e ilumina la piel y estimula su regeneración natural. Elimina puntos negros, grasa y toxinas. Reduce los poros y controla el exceso de sebo. Mejora la textura y luminosidad del rostro.'},
+    {id:2,nombre:'Plasma con Dermopen',categoria:'Tratamientos Regenerativos',duracion:90,precio:140000,descripcion:'Tratamiento que combina plasma con microagujas para potenciar la regeneración celular. Estimula colágeno profundo. Mejora manchas y textura. Acelera renovación de la piel.'},
+    {id:3,nombre:'Plasma rico en plaquetas con mesoterapia',categoria:'Tratamientos Regenerativos',duracion:90,precio:130000,descripcion:'Tratamiento regenerativo avanzado que estimula el colágeno, mejorando la textura y luminosidad de la piel desde el interior. Rejuvenece y regenera la piel en profundidad. Difumina arrugas y cicatrices. Aporta luminosidad y firmeza.'},
+    {id:4,nombre:'Plasma capilar con mesoterapia',categoria:'Tratamientos Regenerativos',duracion:60,precio:125000,descripcion:'Tratamiento que fortalece el cuero cabelludo e impulsa el crecimiento del cabello. Reduce caída capilar. Estimula crecimiento. Fortalece el folículo.'},
+    {id:5,nombre:'Láser + Peeling',categoria:'Facial Avanzado',duracion:75,precio:140000,descripcion:'Combinación de tecnologías para renovar la piel en profundidad. Mejora manchas y acné. Unifica el tono. Piel más lisa y renovada.'},
+    {id:6,nombre:'Peeling (con rutina en domicilio)',categoria:'Facial Avanzado',duracion:60,precio:120000,descripcion:'Exfoliación química que renueva capas superficiales de la piel. Elimina células muertas. Mejora textura. Aporta luminosidad.'},
+    {id:7,nombre:'Microblading de cejas',categoria:'Micropigmentación',duracion:120,precio:200000,descripcion:'Técnica semipermanente que redefine y rellena las cejas. Diseño natural de cejas. Mayor definición. Ahorro de tiempo diario.'},
+    {id:8,nombre:'Delineado permanente de ojos',categoria:'Micropigmentación',duracion:90,precio:200000,descripcion:'Pigmentación semipermanente que resalta la mirada. Intensifica la mirada. Efecto maquillaje permanente. Practicidad diaria.'},
+    {id:9,nombre:'Exosomas con Microneedling',categoria:'Tratamientos Regenerativos',duracion:75,precio:139000,descripcion:'Tratamiento avanzado que regenera la piel a nivel celular. Rejuvenecimiento profundo. Mejora elasticidad. Regeneración celular intensiva.'},
+    {id:10,nombre:'HIFU',categoria:'Facial Avanzado',duracion:60,precio:99000,descripcion:'Tecnología de ultrasonido focalizado que genera efecto lifting sin cirugía. Reafirma la piel. Efecto lifting. Estimula colágeno.'},
+    {id:11,nombre:'Peptonas de músculo para glúteos',categoria:'Tratamiento Corporal',duracion:60,precio:67000,descripcion:'Tratamiento corporal que aumenta, tonifica y reafirma los glúteos, generando mayor volumen y definición. Levanta y define los glúteos de forma natural. Tonifica y reafirma los músculos. Aumenta el volumen y la firmeza.'},
+    {id:12,nombre:'Endopeel glúteos',categoria:'Tratamiento Corporal',duracion:60,precio:78000,descripcion:'Procedimiento estético que mejora la firmeza y apariencia de los glúteos. Reafirma la zona. Mejora tonicidad. Resultados progresivos.'},
+    {id:13,nombre:'Presoterapia',categoria:'Tratamiento Corporal',duracion:45,precio:55000,descripcion:'Tratamiento de compresión que estimula el sistema linfático. Reduce retención de líquidos. Mejora circulación. Disminuye celulitis.'},
+    {id:14,nombre:'Lifting',categoria:'Facial Avanzado',duracion:45,precio:36000,descripcion:'Tratamiento que mejora la firmeza y tensión de la piel del rostro. Efecto tensor. Rejuvenecimiento facial. Mejora contorno.'},
+    {id:15,nombre:'Perfilado de cejas',categoria:'Cejas',duracion:30,precio:20000,descripcion:'Diseño personalizado para mejorar la forma natural de las cejas. Armoniza el rostro. Mejora expresión. Resultado prolijo.'},
+    {id:16,nombre:'Planchado de cejas',categoria:'Cejas',duracion:30,precio:45000,descripcion:'Técnica que alinea y fija el vello de las cejas. Efecto ordenado. Mayor volumen visual. Look moderno.'},
+    {id:17,nombre:'Mesoterapia corporal',categoria:'Tratamiento Corporal',duracion:60,precio:0,descripcion:'Aplicación de activos para tratar grasa localizada y celulitis. Reduce grasa localizada. Mejora textura de la piel. Estimula circulación.'},
+    {id:18,nombre:'Pulido corporal con radiofrecuencia y mesoterapia',categoria:'Tratamiento Corporal',duracion:75,precio:85000,descripcion:'Tratamiento que exfolia y reafirma la piel corporal. Piel más suave. Estimula colágeno. Mejora firmeza.'},
+    {id:19,nombre:'Masaje terapéutico Tuina + sanación energética con cristales',categoria:'Bienestar y Terapias',duracion:120,precio:55000,descripcion:'Técnica tradicional de la medicina china que armoniza la energía vital, desbloquea tensiones y equilibra el cuerpo. Alivia contracturas, dolores y tensiones. Restablece el flujo energético. Genera relajación profunda y bienestar.'},
+    {id:20,nombre:'Taller de relajación y respiración (máx. 8 personas)',categoria:'Bienestar y Terapias',duracion:120,precio:20000,descripcion:'Experiencia grupal para reducir estrés y reconectar con el cuerpo. Reduce ansiedad. Mejora respiración. Aumenta bienestar general.'},
+    {id:21,nombre:'Digito Puntura',categoria:'Bienestar y Terapias',duracion:60,precio:0,descripcion:'Técnica de acupresión que trabaja sobre puntos energéticos del cuerpo para restablecer el equilibrio y liberar tensiones.'},
+  ]);
 }
 
 function initSampleData(){
