@@ -1096,7 +1096,7 @@ function renderGabinete(){
       const profNombre=prof?prof.nombre:'–';
       return '<div class="gabinete-slot"><div class="gabinete-hora">'+((t.hora||'--:--').slice(0,5))+'</div><div style="flex:1"><div style="font-weight:600;font-size:.88rem">'+nombre+'</div><div style="font-size:.75rem;color:var(--gray-400)">'+servNombre+' · 👩 '+profNombre+'</div></div><button class="action-btn" onclick="editTurno('+t.id+')" title="Asignar gabinete">📌</button></div>';
     }).join('');
-    html+='<div class="gabinete-card" style="grid-column:1/-1"><div class="gabinete-header" style="background:#FEF3C722;border-bottom:3px solid #F59E0B"><div><div class="gabinete-name">⚠️ Sin gabinete asignado</div><div style="font-size:.75rem;color:var(--gray-500);margin-top:2px">'+sinAsignar.length+' turno'+(sinAsignar.length!==1?'s')+' sin gabinete — editá cada uno para asignar</div></div></div><div class="gabinete-body">'+slotsNA+'</div></div>';
+    html+='<div class="gabinete-card" style="grid-column:1/-1"><div class="gabinete-header" style="background:#FEF3C722;border-bottom:3px solid #F59E0B"><div><div class="gabinete-name">⚠️ Sin gabinete asignado</div><div style="font-size:.75rem;color:var(--gray-500);margin-top:2px">'+sinAsignar.length+' turno'+(sinAsignar.length!==1?'s':'')+' sin gabinete — editá cada uno para asignar</div></div></div><div class="gabinete-body">'+slotsNA+'</div></div>';
   }
   grid.innerHTML=html;
 }
