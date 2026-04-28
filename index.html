@@ -6,6 +6,7 @@
 <title>Mariela Campora – Estética Integral</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--primary:#7C3AED;--primary-light:#EDE9FE;--primary-dark:#5B21B6;--pink:#EC4899;--pink-light:#FCE7F3;--green:#10B981;--green-light:#D1FAE5;--orange:#F59E0B;--orange-light:#FEF3C7;--red:#EF4444;--red-light:#FEE2E2;--blue:#3B82F6;--blue-light:#DBEAFE;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--gray-700:#374151;--gray-800:#1F2937;--gray-900:#111827;--sidebar-w:240px;--shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);--shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);--shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);--radius:10px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -235,6 +236,7 @@ tr:hover td{background:var(--gray-50)}
     <div class="nav-item admin-only" onclick="goTo('equipo')"><span class="icon">💼</span>Equipo</div>
     <div class="nav-item" onclick="goTo('servicios')"><span class="icon">✨</span>Servicios</div>
     <div class="nav-item" onclick="goTo('combos')"><span class="icon">🎁</span>Combos</div>
+    <div class="nav-item" onclick="goTo('productos')"><span class="icon">🛍️</span>Productos</div>
     <div class="nav-section admin-only">Finanzas</div>
     <div class="nav-item admin-only" onclick="goTo('caja')"><span class="icon">💵</span>Caja Diaria</div>
     <div class="nav-item admin-only" onclick="goTo('gastos')"><span class="icon">📤</span>Gastos</div>
@@ -332,8 +334,20 @@ tr:hover td{background:var(--gray-50)}
 
 <!-- CLIENTES -->
 <div class="page" id="pageClientes">
-  <div class="search-bar"><input class="search-input" type="text" placeholder="Buscar por nombre, email o teléfono..." id="clientesSearch" oninput="renderClientes()"></div>
+  <div class="search-bar" style="display:flex;gap:8px;align-items:center">
+    <input class="search-input" type="text" placeholder="Buscar por nombre, email o teléfono..." id="clientesSearch" oninput="renderClientes()" style="flex:1">
+    <button class="btn btn-secondary btn-sm" onclick="abrirImportModal('clientes')" style="white-space:nowrap">📥 Importar Excel</button>
+  </div>
   <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Nacimiento</th><th>Turnos</th><th>Acciones</th></tr></thead><tbody id="clientesTbody"></tbody></table></div></div></div>
+</div>
+
+<!-- PRODUCTOS -->
+<div class="page" id="pageProductos">
+  <div class="search-bar" style="display:flex;gap:8px;align-items:center">
+    <input class="search-input" type="text" placeholder="Buscar producto..." id="productosSearch" oninput="renderProductos()" style="flex:1">
+    <button class="btn btn-secondary btn-sm" onclick="abrirImportModal('productos')" style="white-space:nowrap">📥 Importar Excel</button>
+  </div>
+  <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Producto</th><th>Categoría</th><th>Descripción</th><th>Precio</th><th>Acciones</th></tr></thead><tbody id="productosTbody"></tbody></table></div></div></div>
 </div>
 
 <!-- EQUIPO -->
@@ -343,7 +357,7 @@ tr:hover td{background:var(--gray-50)}
 
 <!-- SERVICIOS -->
 <div class="page" id="pageServicios">
-  <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Servicio</th><th>Categoría</th><th>Duración</th><th>Precio</th><th>Acciones</th></tr></thead><tbody id="serviciosTbody"></tbody></table></div></div></div>
+  <div id="serviciosList"></div>
 </div>
 
 <!-- CAJA -->
@@ -809,6 +823,7 @@ const PAGE_CFG={
   reportes:{title:'Reportes',action:'🖨️ Imprimir',fn:'printReport'},
   marketing:{title:'Marketing',action:'+ Nueva Campaña',fn:'openMktAction'},
   combos:{title:'Combos',action:'+ Nuevo Combo',fn:'openModalCombo'},
+  productos:{title:'Productos',action:'+ Nuevo Producto',fn:'openModalProducto'},
 };
 function noop(){}
 function printReport(){window.print();}
@@ -832,7 +847,7 @@ function goTo(page){
 }
 function topbarActionFn(){if(PAGE_CFG[currentPage])window[PAGE_CFG[currentPage].fn]();}
 function renderPage(p){
-  const map={dashboard:renderDashboard,turnos:renderTurnos,calendario:renderCalendar,clientes:renderClientes,equipo:renderEquipo,servicios:renderServicios,facturacion:renderFacturacion,caja:renderCaja,gastos:renderGastos,stock:renderStock,reportes:renderReportes,marketing:renderMarketing,combos:renderCombos};
+  const map={dashboard:renderDashboard,turnos:renderTurnos,calendario:renderCalendar,clientes:renderClientes,equipo:renderEquipo,servicios:renderServicios,facturacion:renderFacturacion,caja:renderCaja,gastos:renderGastos,stock:renderStock,reportes:renderReportes,marketing:renderMarketing,combos:renderCombos,productos:renderProductos};
   if(map[p])map[p]();
 }
 
@@ -913,6 +928,7 @@ function initSampleData(){
     {id:20,nombre:'Taller de relajación y respiración (máx. 8 personas)',categoria:'Bienestar y Terapias',duracion:120,precio:20000,descripcion:'Experiencia grupal para reducir estrés y reconectar con el cuerpo. Reduce ansiedad. Mejora respiración. Aumenta bienestar general.'},
     {id:21,nombre:'Digito Puntura',categoria:'Bienestar y Terapias',duracion:60,precio:0,descripcion:'Técnica de acupresión que trabaja sobre puntos energéticos del cuerpo para restablecer el equilibrio y liberar tensiones.'},
   ]);
+  S.set('productos',[]);
   S.set('stock',[
     {id:1,nombre:'Crema Hidratante Facial',categoria:'Cremas',cantidad:8,minimo:5,precio:3500,unidad:'unidades'},
     {id:2,nombre:'Aceite de Almendras',categoria:'Aceites',cantidad:3,minimo:4,precio:2800,unidad:'unidades'},
@@ -1994,6 +2010,182 @@ function makeChart(id,cfg){
   var ctx=document.getElementById(id);if(!ctx)return;
   _charts[id]=new Chart(ctx,cfg);
 }
+
+// ── PRODUCTOS ──────────────────────────────────────────────────────────
+function renderProductos(){
+  var q=(document.getElementById('productosSearch')||{}).value||'';
+  var list=(S.get('productos')||[]).filter(function(p){
+    return !q||p.nombre.toLowerCase().includes(q.toLowerCase())||(p.categoria||'').toLowerCase().includes(q.toLowerCase());
+  });
+  var tbody=document.getElementById('productosTbody');
+  if(!tbody)return;
+  if(!list.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🛍️</div><p>Sin productos cargados. Usá "+ Nuevo Producto" o importá desde Excel.</p></div></td></tr>';return;}
+  tbody.innerHTML=list.map(function(p){
+    return '<tr><td><strong>'+p.nombre+'</strong></td><td>'+(p.categoria||'–')+'</td><td style="font-size:.8rem;color:var(--gray-500);max-width:200px">'+(p.descripcion||'–')+'</td><td>'+fmt(p.precio)+'</td><td><button class="btn btn-sm btn-secondary" onclick="editProducto('+p.id+')">Editar</button> <button class="btn btn-sm btn-danger" onclick="deleteProducto('+p.id+')">Eliminar</button></td></tr>';
+  }).join('');
+}
+function openModalProducto(){
+  document.getElementById('modalProductoId').value='';
+  document.getElementById('modalProductoNombre').value='';
+  document.getElementById('modalProductoCategoria').value='';
+  document.getElementById('modalProductoDescripcion').value='';
+  document.getElementById('modalProductoPrecio').value='';
+  openModal('modalProducto');
+}
+function editProducto(id){
+  var p=(S.get('productos')||[]).find(function(x){return x.id===id;});
+  if(!p)return;
+  document.getElementById('modalProductoId').value=p.id;
+  document.getElementById('modalProductoNombre').value=p.nombre;
+  document.getElementById('modalProductoCategoria').value=p.categoria||'';
+  document.getElementById('modalProductoDescripcion').value=p.descripcion||'';
+  document.getElementById('modalProductoPrecio').value=p.precio||0;
+  openModal('modalProducto');
+}
+function saveProducto(){
+  var id=parseInt(document.getElementById('modalProductoId').value)||0;
+  var nombre=document.getElementById('modalProductoNombre').value.trim();
+  if(!nombre){showToast('El nombre es obligatorio','error');return;}
+  var obj={id:id||Date.now(),nombre:nombre,categoria:document.getElementById('modalProductoCategoria').value.trim(),descripcion:document.getElementById('modalProductoDescripcion').value.trim(),precio:parseFloat(document.getElementById('modalProductoPrecio').value)||0};
+  var list=S.get('productos')||[];
+  if(id){list=list.map(function(p){return p.id===id?obj:p;});}else{list.push(obj);}
+  S.set('productos',list);closeModal('modalProducto');showToast('Producto guardado','success');renderProductos();
+}
+function deleteProducto(id){
+  if(!confirm('¿Eliminar producto?'))return;
+  S.set('productos',(S.get('productos')||[]).filter(function(p){return p.id!==id;}));
+  renderProductos();showToast('Producto eliminado');
+}
+
+// ── IMPORTAR EXCEL / CSV ────────────────────────────────────────────────
+var _importTipo='';
+var _importRows=[];
+var _importCols=[];
+var _IMPORT_CFG={
+  clientes:{
+    title:'Importar Clientes',
+    desc:'Columnas esperadas (en cualquier orden): <b>nombre</b>, <b>apellido</b>, email, telefono, nacimiento (YYYY-MM-DD), instagram, notas.',
+    template:'nombre | apellido | email | telefono | nacimiento | instagram | notas',
+    required:['nombre','apellido'],
+    map:function(r,i){return {id:Date.now()+i,nombre:r.nombre||'',apellido:r.apellido||'',email:r.email||r['e-mail']||'',telefono:r.telefono||r['teléfono']||r['telefono']||'',nacimiento:r.nacimiento||'',instagram:r.instagram||'',notas:r.notas||''};}
+  },
+  productos:{
+    title:'Importar Productos',
+    desc:'Columnas esperadas (en cualquier orden): <b>nombre</b>, categoria, descripcion, precio.',
+    template:'nombre | categoria | descripcion | precio',
+    required:['nombre'],
+    map:function(r,i){return {id:Date.now()+i,nombre:r.nombre||'',categoria:r.categoria||r['categoría']||'',descripcion:r.descripcion||r['descripción']||'',precio:parseFloat(r.precio)||0};}
+  }
+};
+function abrirImportModal(tipo){
+  _importTipo=tipo;
+  _importRows=[];_importCols=[];
+  var cfg=_IMPORT_CFG[tipo];
+  document.getElementById('importModalTitle').textContent=cfg.title;
+  document.getElementById('importModalDesc').innerHTML=cfg.desc;
+  document.getElementById('importTemplate').innerHTML='<b>Plantilla:</b> '+cfg.template;
+  document.getElementById('importPreview').style.display='none';
+  document.getElementById('importConfirmBtn').disabled=true;
+  document.getElementById('importFileInput').value='';
+  openModal('modalImport');
+}
+function previewImport(input){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  if(file.name.endsWith('.csv')){
+    reader.onload=function(e){
+      var text=e.target.result;
+      var lines=text.trim().split(/\r?\n/);
+      var sep=lines[0].includes(';')?';':',';
+      var headers=lines[0].split(sep).map(function(h){return h.trim().toLowerCase().replace(/[^a-záéíóúñü\w]/gi,'').trim();});
+      var rows=lines.slice(1).filter(function(l){return l.trim();}).map(function(l){
+        var vals=l.split(sep);
+        var obj={};headers.forEach(function(h,i){obj[h]=(vals[i]||'').trim();});return obj;
+      });
+      mostrarPreview(headers,rows);
+    };
+    reader.readAsText(file,'UTF-8');
+  } else {
+    reader.onload=function(e){
+      var data=new Uint8Array(e.target.result);
+      var wb=XLSX.read(data,{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var json=XLSX.utils.sheet_to_json(ws,{defval:''});
+      var headers=json.length?Object.keys(json[0]).map(function(h){return h.trim().toLowerCase();}):[]; 
+      var rows=json.map(function(r){var obj={};Object.keys(r).forEach(function(k){obj[k.trim().toLowerCase()]=String(r[k]);});return obj;});
+      mostrarPreview(headers,rows);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+function mostrarPreview(headers,rows){
+  _importCols=headers;_importRows=rows;
+  document.getElementById('importCount').textContent=rows.length;
+  var thead=document.getElementById('importPreviewHead');
+  var tbody=document.getElementById('importPreviewBody');
+  thead.innerHTML='<tr>'+headers.map(function(h){return '<th style="padding:4px 8px;text-align:left;border-bottom:1px solid var(--gray-200)">'+h+'</th>';}).join('')+'</tr>';
+  tbody.innerHTML=rows.slice(0,5).map(function(r){return '<tr>'+headers.map(function(h){return '<td style="padding:4px 8px;border-bottom:1px solid var(--gray-100)">'+(r[h]||'')+'</td>';}).join('')+'</tr>';}).join('')+(rows.length>5?'<tr><td colspan="'+headers.length+'" style="padding:4px 8px;color:var(--gray-400);font-style:italic">... y '+(rows.length-5)+' más</td></tr>':'');
+  document.getElementById('importPreview').style.display='';
+  document.getElementById('importConfirmBtn').disabled=!rows.length;
+}
+function confirmarImport(){
+  var cfg=_IMPORT_CFG[_importTipo];
+  var nuevos=_importRows.map(function(r,i){return cfg.map(r,i);}).filter(function(r){return cfg.required.every(function(k){return r[k]&&r[k].trim&&r[k].trim();});});
+  if(!nuevos.length){showToast('No se encontraron filas válidas','error');return;}
+  var existing=S.get(_importTipo)||[];
+  var merged=existing.concat(nuevos);
+  S.set(_importTipo,merged);
+  closeModal('modalImport');
+  showToast(nuevos.length+' registros importados','success');
+  if(_importTipo==='clientes')renderClientes();
+  if(_importTipo==='productos')renderProductos();
+}
+
 </script>
+
+
+<!-- MODAL PRODUCTO -->
+<div class="modal-overlay" id="modalProducto">
+  <div class="modal">
+    <div class="modal-header"><h3>Producto</h3><button class="btn-icon" onclick="closeModal('modalProducto')">✕</button></div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="modalProductoId">
+      <div><label class="field-label">Nombre *</label><input class="field" id="modalProductoNombre" type="text" placeholder="Nombre del producto"></div>
+      <div><label class="field-label">Categoría</label><input class="field" id="modalProductoCategoria" type="text" placeholder="Ej: Cremas, Sueros, Aceites..."></div>
+      <div><label class="field-label">Descripción</label><textarea class="field" id="modalProductoDescripcion" rows="3" placeholder="Descripción del producto"></textarea></div>
+      <div><label class="field-label">Precio (ARS)</label><input class="field" id="modalProductoPrecio" type="number" min="0" placeholder="0"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveProducto()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR EXCEL -->
+<div class="modal-overlay" id="modalImport">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header"><h3 id="importModalTitle">Importar desde Excel / CSV</h3><button class="btn-icon" onclick="closeModal('modalImport')">✕</button></div>
+    <div style="padding:20px">
+      <p style="font-size:.85rem;color:var(--gray-500);margin-bottom:16px" id="importModalDesc">Cargá un archivo <strong>.xlsx</strong> o <strong>.csv</strong>.</p>
+      <div id="importTemplate" style="background:var(--gray-100);border-radius:8px;padding:12px;margin-bottom:16px;font-size:.8rem;color:var(--gray-600)"></div>
+      <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="margin-bottom:16px;width:100%" onchange="previewImport(this)">
+      <div id="importPreview" style="display:none">
+        <div style="font-weight:600;margin-bottom:8px;font-size:.85rem">Vista previa (<span id="importCount">0</span> registros):</div>
+        <div style="max-height:220px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px">
+          <table style="width:100%;font-size:.78rem;border-collapse:collapse">
+            <thead id="importPreviewHead" style="background:var(--gray-100);position:sticky;top:0"></thead>
+            <tbody id="importPreviewBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+        <button class="btn btn-secondary" onclick="closeModal('modalImport')">Cancelar</button>
+        <button class="btn btn-primary" id="importConfirmBtn" onclick="confirmarImport()" disabled>Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
