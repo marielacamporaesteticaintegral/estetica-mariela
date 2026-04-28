@@ -125,8 +125,12 @@ tr:hover td{background:var(--gray-50)}
 .caja-box{flex:1;min-width:150px;background:white;border-radius:var(--radius);padding:16px 20px;box-shadow:var(--shadow);text-align:center}
 .caja-box .caja-val{font-size:1.5rem;font-weight:700;margin-top:4px}
 /* CALENDARIO */
-.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.cal-nav h3{font-size:1.1rem;font-weight:700;color:var(--gray-800);text-transform:capitalize}
+.cal-view-tabs{display:flex;gap:3px;background:var(--gray-100);padding:4px;border-radius:8px}
+.cal-view-tab{padding:6px 16px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;background:none;color:var(--gray-600);transition:all .15s}
+.cal-view-tab.active{background:white;color:var(--primary);box-shadow:var(--shadow)}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.cal-nav h3{font-size:1.05rem;font-weight:700;color:var(--gray-800);text-transform:capitalize}
+/* Vista mensual */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
 .cal-day-header{text-align:center;font-size:.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;padding:8px 0}
 .cal-cell{min-height:90px;background:white;border-radius:6px;padding:6px;cursor:pointer;border:1.5px solid var(--gray-100);transition:border-color .15s}
@@ -139,6 +143,28 @@ tr:hover td{background:var(--gray-50)}
 .cal-event.confirmado{background:#D1FAE5;color:#065F46}
 .cal-event.completado{background:var(--blue-light);color:#1E40AF}
 .cal-event.cancelado{background:var(--red-light);color:#991B1B}
+/* Vista timeline (día y semana) */
+.cal-tl-container{background:white;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.cal-week-head{display:flex;border-bottom:2px solid var(--gray-200)}
+.cal-week-head-space{width:56px;flex-shrink:0;border-right:1px solid var(--gray-100)}
+.cal-week-dcol{flex:1;text-align:center;padding:8px 4px;font-size:.78rem;font-weight:700;color:var(--gray-600);border-left:1px solid var(--gray-100);line-height:1.4}
+.cal-week-dcol.hoy{color:var(--primary);background:var(--primary-light)}
+.cal-tl-wrap{display:flex;overflow-y:auto;max-height:620px}
+.cal-axis{width:56px;flex-shrink:0;border-right:1px solid var(--gray-100)}
+.cal-axis-lbl{height:60px;display:flex;align-items:flex-start;justify-content:flex-end;padding:4px 8px 0 0;font-size:.68rem;color:var(--gray-400);font-weight:700}
+.cal-tl-body{flex:1;position:relative}
+.cal-tl-cols{display:flex;height:100%;position:absolute;inset:0}
+.cal-tl-col{flex:1;border-left:1px solid var(--gray-100);position:relative}
+.cal-hour-line{position:absolute;left:0;right:0;border-top:1px solid var(--gray-100)}
+.cal-hour-line.half{border-top:1px dashed #f3f3f3}
+.cal-now-line{position:absolute;left:0;right:0;border-top:2px solid var(--red);z-index:3}
+.cal-now-dot{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:var(--red)}
+.cal-evt-blk{position:absolute;left:2px;right:2px;border-radius:6px;padding:3px 6px;font-size:.72rem;font-weight:600;cursor:pointer;overflow:hidden;z-index:2;border-left:3px solid rgba(0,0,0,.15);line-height:1.3}
+.cal-evt-blk:hover{filter:brightness(.93);z-index:3}
+.cal-evt-blk.pendiente{background:#FEF3C7;color:#92400E}
+.cal-evt-blk.confirmado{background:#D1FAE5;color:#065F46}
+.cal-evt-blk.completado{background:var(--blue-light);color:#1E40AF}
+.cal-evt-blk.cancelado{background:var(--red-light);color:#991B1B;opacity:.6}
 /* GABINETE */
 .gabinete-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
 .gabinete-card{background:white;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
@@ -356,16 +382,23 @@ tr:hover td{background:var(--gray-50)}
 
 <!-- CALENDARIO -->
 <div class="page" id="pageCalendario">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+    <div class="cal-view-tabs">
+      <button class="cal-view-tab active" id="calTabDia" onclick="setCalView('dia')">Día</button>
+      <button class="cal-view-tab" id="calTabSemana" onclick="setCalView('semana')">Semana</button>
+      <button class="cal-view-tab" id="calTabMes" onclick="setCalView('mes')">Mes</button>
+    </div>
+    <select id="calProfFiltro" class="field" style="width:190px;margin:0;font-size:.82rem" onchange="renderCalendario()"><option value="">Todas las profesionales</option></select>
+  </div>
   <div class="cal-nav">
-    <button class="btn btn-secondary btn-sm" onclick="calMes(-1)">◀ Anterior</button>
+    <button class="btn btn-secondary btn-sm" onclick="calNavPrev()">◀ Anterior</button>
     <h3 id="calTitulo"></h3>
-    <button class="btn btn-secondary btn-sm" onclick="calMes(1)">Siguiente ▶</button>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-secondary btn-sm" onclick="calHoy()">Hoy</button>
+      <button class="btn btn-secondary btn-sm" onclick="calNavNext()">Siguiente ▶</button>
+    </div>
   </div>
-  <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
-    <button class="btn btn-secondary btn-sm" onclick="calHoy()">Hoy</button>
-    <select id="calProfFiltro" class="field" style="width:180px;margin:0;font-size:.82rem" onchange="renderCalendario()"><option value="">Todas las profesionales</option></select>
-  </div>
-  <div class="cal-grid" id="calGrid"></div>
+  <div id="calContent"></div>
 </div>
 
 <!-- GABINETE -->
@@ -387,7 +420,7 @@ tr:hover td{background:var(--gray-50)}
 </div><!-- /app -->
 
 <!-- MODALES -->
-<div class="modal-overlay" id="modalTurno"><div class="modal"><div class="modal-header"><h3 id="modalTurnoTitle">Nuevo Turno</h3><button class="modal-close" onclick="closeModal('modalTurno')">×</button></div><div class="modal-body"><input type="hidden" id="turnoEditId"><div class="form-row"><div class="field"><label>Cliente</label><select id="turnoCliente"></select></div><div class="field"><label>Servicio</label><select id="turnoServicio" onchange="updateTurnoPrecio()"></select></div></div><div class="form-row"><div class="field"><label>Profesional</label><select id="turnoProfesional"></select></div><div class="field"><label>Precio ($)</label><input type="number" id="turnoPrecio"></div></div><div class="form-row"><div class="field"><label>Fecha</label><input type="date" id="turnoFecha"></div><div class="field"><label>Hora</label><input type="time" id="turnoHora"></div></div><div class="form-row"><div class="field"><label>Estado</label><select id="turnoEstado"><option value="pendiente">Pendiente</option><option value="confirmado">Confirmado</option><option value="completado">Completado</option><option value="cancelado">Cancelado</option></select></div><div class="field"><label>Método de pago</label><select id="turnoMetodoPago"><option value="">Sin cobrar</option><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="mercadopago">MercadoPago</option></select></div></div><div class="form-row"><div class="field"><label>Gabinete</label><select id="turnoGabinete"><option value="">Sin asignar</option><option value="1">Gabinete 1</option><option value="2">Gabinete 2</option></select></div><div class="field"></div></div><div class="field"><label>Notas</label><textarea id="turnoNotas"></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalTurno')">Cancelar</button><button class="btn btn-primary" onclick="saveTurno()">Guardar</button></div></div></div>
+<div class="modal-overlay" id="modalTurno"><div class="modal"><div class="modal-header"><h3 id="modalTurnoTitle">Nuevo Turno</h3><button class="modal-close" onclick="closeModal('modalTurno')">×</button></div><div class="modal-body"><input type="hidden" id="turnoEditId"><div class="form-row"><div class="field"><label>Cliente</label><select id="turnoCliente"></select></div><div class="field"><label>Servicio</label><select id="turnoServicio" onchange="updateTurnoPrecio()"></select></div></div><div class="form-row"><div class="field"><label>Profesional</label><select id="turnoProfesional"></select></div><div class="field"><label>Precio ($)</label><input type="number" id="turnoPrecio"></div></div><div class="form-row"><div class="field"><label>Fecha</label><input type="date" id="turnoFecha"></div><div class="field"><label>Hora inicio</label><input type="time" id="turnoHora" oninput="updateTurnoFin()"></div></div><div id="turnoFinWrap" style="display:none;margin-bottom:14px;padding:10px 14px;background:var(--primary-light);border-radius:8px;font-size:.85rem;color:var(--primary-dark)"></div><div id="turnoConflictoWrap" style="display:none;margin-bottom:14px;padding:10px 14px;background:var(--red-light);border-radius:8px;font-size:.85rem;color:#991B1B"></div><div class="form-row"><div class="field"><label>Estado</label><select id="turnoEstado"><option value="pendiente">Pendiente</option><option value="confirmado">Confirmado</option><option value="completado">Completado</option><option value="cancelado">Cancelado</option></select></div><div class="field"><label>Método de pago</label><select id="turnoMetodoPago"><option value="">Sin cobrar</option><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="mercadopago">MercadoPago</option></select></div></div><div class="form-row"><div class="field"><label>Gabinete</label><select id="turnoGabinete"><option value="">Sin asignar</option><option value="1">Gabinete 1</option><option value="2">Gabinete 2</option></select></div><div class="field"></div></div><div class="field"><label>Notas</label><textarea id="turnoNotas"></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalTurno')">Cancelar</button><button class="btn btn-primary" onclick="saveTurno()">Guardar</button></div></div></div>
 <div class="modal-overlay" id="modalCliente"><div class="modal"><div class="modal-header"><h3>Cliente</h3><button class="modal-close" onclick="closeModal('modalCliente')">×</button></div><div class="modal-body"><input type="hidden" id="clienteEditId"><div class="form-row"><div class="field"><label>Nombre *</label><input type="text" id="clienteNombre"></div><div class="field"><label>Apellido *</label><input type="text" id="clienteApellido"></div></div><div class="form-row"><div class="field"><label>Email</label><input type="email" id="clienteEmail"></div><div class="field"><label>Teléfono</label><input type="tel" id="clienteTel"></div></div><div class="form-row"><div class="field"><label>Nacimiento</label><input type="date" id="clienteNac"></div><div class="field"><label>Instagram</label><input type="text" id="clienteInsta"></div></div><div class="field"><label>Notas</label><textarea id="clienteNotas"></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalCliente')">Cancelar</button><button class="btn btn-primary" onclick="saveCliente()">Guardar</button></div></div></div>
 <div class="modal-overlay" id="modalEmpleado"><div class="modal"><div class="modal-header"><h3>Empleado/a</h3><button class="modal-close" onclick="closeModal('modalEmpleado')">×</button></div><div class="modal-body"><input type="hidden" id="empleadoEditId"><div class="form-row"><div class="field"><label>Nombre *</label><input type="text" id="empleadoNombre"></div><div class="field"><label>Apellido *</label><input type="text" id="empleadoApellido"></div></div><div class="form-row"><div class="field"><label>Especialidad</label><input type="text" id="empleadoEsp"></div><div class="field"><label>Comisión %</label><input type="number" id="empleadoComision" value="40"></div></div><div class="form-row"><div class="field"><label>Email</label><input type="email" id="empleadoEmail"></div><div class="field"><label>Teléfono</label><input type="tel" id="empleadoTel"></div></div><div class="field"><label>Estado</label><select id="empleadoActivo"><option value="1">Activo</option><option value="0">Inactivo</option></select></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalEmpleado')">Cancelar</button><button class="btn btn-primary" onclick="saveEmpleado()">Guardar</button></div></div></div>
 <div class="modal-overlay" id="modalServicio"><div class="modal"><div class="modal-header"><h3>Servicio</h3><button class="modal-close" onclick="closeModal('modalServicio')">×</button></div><div class="modal-body"><input type="hidden" id="servicioEditId"><div class="field"><label>Nombre *</label><input type="text" id="servicioNombre"></div><div class="form-row"><div class="field"><label>Categoría</label><select id="servicioCategoria"><option>Facial Avanzado</option><option>Tratamientos Regenerativos</option><option>Micropigmentación</option><option>Tratamiento Corporal</option><option>Cejas</option><option>Bienestar y Terapias</option><option>Otros</option></select></div><div class="field"><label>Duración (min) *</label><input type="number" id="servicioDuracion"></div></div><div class="field"><label>Precio ($)</label><input type="number" id="servicioPrecio"></div><div class="field"><label>Descripción</label><textarea id="servicioDescripcion" rows="3"></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalServicio')">Cancelar</button><button class="btn btn-primary" onclick="saveServicio()">Guardar</button></div></div></div>
@@ -776,9 +809,18 @@ function saveTurno() {
   const id=parseInt(document.getElementById('turnoEditId').value)||null;
   const obj={id:id||Date.now(),clienteId:parseInt(document.getElementById('turnoCliente').value),servicioId:parseInt(document.getElementById('turnoServicio').value),empleadoId:parseInt(document.getElementById('turnoProfesional').value),fecha:document.getElementById('turnoFecha').value,hora:document.getElementById('turnoHora').value,estado:document.getElementById('turnoEstado').value,metodoPago:document.getElementById('turnoMetodoPago').value,notas:document.getElementById('turnoNotas').value,precio:parseFloat(document.getElementById('turnoPrecio').value)||0,gabinete:document.getElementById('turnoGabinete').value};
   if(!obj.clienteId||!obj.servicioId||!obj.fecha){showToast('Complete los campos requeridos','error');return;}
+  // Verificar conflicto de horario
+  if(obj.empleadoId&&obj.hora){
+    const sv=(S.get('servicios')||[]).find(s=>s.id===obj.servicioId);
+    const dur=sv?(sv.duracion||60):60;
+    const hayConflicto=_checkConflicto(id,obj.empleadoId,obj.fecha,obj.hora,dur,null);
+    if(hayConflicto&&!confirm('⚠️ Hay un conflicto de horario con otro turno de esta profesional.\n¿Querés guardar igual?')) return;
+  }
   let list=S.get('turnos')||[];
   if(id){const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=obj;}else list.push(obj);
   S.set('turnos',list);closeModal('modalTurno');showToast('Turno guardado','success');renderTurnos();renderDashboard();
+  if(typeof renderCalendario==='function'&&document.getElementById('pageCalendario')?.classList.contains('active'))renderCalendario();
+  if(typeof renderGabinete==='function'&&document.getElementById('pageGabinete')?.classList.contains('active'))renderGabinete();
 }
 function fillTurnoSelects() {
   const cl=S.get('clientes')||[],sv=S.get('servicios')||[],eq=S.get('equipo')||[];
@@ -786,7 +828,50 @@ function fillTurnoSelects() {
   document.getElementById('turnoServicio').innerHTML='<option value="">Seleccionar servicio...</option>'+sv.map(s=>'<option value="'+s.id+'" data-precio="'+s.precio+'">'+s.nombre+'</option>').join('');
   document.getElementById('turnoProfesional').innerHTML='<option value="">Seleccionar profesional...</option>'+eq.filter(e=>e.activo).map(e=>'<option value="'+e.id+'">'+e.nombre+' '+e.apellido+'</option>').join('');
 }
-function updateTurnoPrecio() { const sel=document.getElementById('turnoServicio');const opt=sel.options[sel.selectedIndex];if(opt&&opt.dataset.precio)document.getElementById('turnoPrecio').value=opt.dataset.precio; }
+function updateTurnoPrecio() {
+  const sel=document.getElementById('turnoServicio');
+  const opt=sel.options[sel.selectedIndex];
+  if(opt&&opt.dataset.precio) document.getElementById('turnoPrecio').value=opt.dataset.precio;
+  updateTurnoFin();
+}
+function updateTurnoFin() {
+  const svId=parseInt((document.getElementById('turnoServicio')||{}).value)||0;
+  const hora=document.getElementById('turnoHora').value;
+  const sv=(S.get('servicios')||[]).find(s=>s.id===svId);
+  const wrap=document.getElementById('turnoFinWrap');
+  const conflictoWrap=document.getElementById('turnoConflictoWrap');
+  if(!sv||!hora){ if(wrap)wrap.style.display='none'; if(conflictoWrap)conflictoWrap.style.display='none'; return; }
+  const dur=sv.duracion||60;
+  const horaFin=_addMins(hora,dur);
+  if(wrap){ wrap.style.display=''; wrap.innerHTML='⏱️ <strong>'+sv.nombre+'</strong> dura '+dur+' min → termina a las <strong>'+horaFin+'</strong>'; }
+  // Verificar conflicto
+  const editId=parseInt(document.getElementById('turnoEditId').value)||null;
+  const profId=parseInt(document.getElementById('turnoProfesional').value)||0;
+  const fecha=document.getElementById('turnoFecha').value;
+  if(profId&&fecha) _checkConflicto(editId,profId,fecha,hora,dur,conflictoWrap);
+  else if(conflictoWrap) conflictoWrap.style.display='none';
+}
+function _timeToMin(t){ if(!t)return 0; const [h,m]=(t||'0:0').split(':').map(Number); return h*60+m; }
+function _checkConflicto(editId,profId,fecha,hora,dur,wrap){
+  const ini=_timeToMin(hora), fin=ini+dur;
+  const conflicto=(S.get('turnos')||[]).find(t=>{
+    if(t.id===editId||t.fecha!==fecha||t.estado==='cancelado') return false;
+    if(String(t.empleadoId)!==String(profId)) return false;
+    const sv=(S.get('servicios')||[]).find(s=>s.id===t.servicioId);
+    const durT=sv?(sv.duracion||60):60;
+    const iniT=_timeToMin(t.hora), finT=iniT+durT;
+    return ini<finT&&fin>iniT;
+  });
+  if(wrap){
+    if(conflicto){
+      const cl=(S.get('clientes')||[]).find(c=>c.id===conflicto.clienteId);
+      const sv=(S.get('servicios')||[]).find(s=>s.id===conflicto.servicioId);
+      wrap.style.display='';
+      wrap.innerHTML='⚠️ <strong>Conflicto de horario:</strong> esta profesional ya tiene un turno a las '+(conflicto.hora||'?').slice(0,5)+' ('+(sv?sv.nombre:'servicio')+', '+(sv?sv.duracion||60:60)+' min) con '+(cl?cl.nombre:'otro cliente')+'.';
+    } else { wrap.style.display='none'; }
+  }
+  return !!conflicto;
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // CLIENTES
@@ -986,65 +1071,156 @@ function saveInsumo(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// CALENDARIO
+// CALENDARIO — vistas Día / Semana / Mes
 // ═══════════════════════════════════════════════════════════════════════
-let _calYear = new Date().getFullYear();
-let _calMonth = new Date().getMonth();
+let _calView='dia';
+let _calRef=new Date(); // fecha de referencia
 
-function calHoy(){ _calYear=new Date().getFullYear(); _calMonth=new Date().getMonth(); renderCalendario(); }
-function calMes(delta){ _calMonth+=delta; if(_calMonth>11){_calMonth=0;_calYear++;} if(_calMonth<0){_calMonth=11;_calYear--;} renderCalendario(); }
+const CAL_HORA_INI=8, CAL_HORA_FIN=21, CAL_PX_MIN=1.5; // 1.5px por minuto
+function calPx(min){ return min*CAL_PX_MIN; }
+function calTop(hora){ const [h,m]=(hora||'08:00').split(':').map(Number); return calPx((h*60+m)-(CAL_HORA_INI*60)); }
+function calH(min){ return calPx(min||60); }
+const CAL_TOTAL_H=calPx((CAL_HORA_FIN-CAL_HORA_INI)*60);
 
+function setCalView(v){
+  _calView=v;
+  ['dia','semana','mes'].forEach(x=>{
+    const el=document.getElementById('calTab'+x.charAt(0).toUpperCase()+x.slice(1));
+    if(el)el.classList.toggle('active',x===v);
+  });
+  renderCalendario();
+}
+function calHoy(){ _calRef=new Date(); renderCalendario(); }
+function calNavPrev(){
+  if(_calView==='dia') _calRef=new Date(_calRef.getTime()-86400000);
+  else if(_calView==='semana') _calRef=new Date(_calRef.getTime()-7*86400000);
+  else { _calRef.setMonth(_calRef.getMonth()-1); }
+  renderCalendario();
+}
+function calNavNext(){
+  if(_calView==='dia') _calRef=new Date(_calRef.getTime()+86400000);
+  else if(_calView==='semana') _calRef=new Date(_calRef.getTime()+7*86400000);
+  else { _calRef.setMonth(_calRef.getMonth()+1); }
+  renderCalendario();
+}
 function renderCalendario(){
-  // Título
-  const titulo=document.getElementById('calTitulo');
-  if(titulo)titulo.textContent=new Date(_calYear,_calMonth,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
-  // Filtro profesional
-  const selProf=document.getElementById('calProfFiltro');
-  if(selProf){
-    const profVal=selProf.value;
-    const equipo=S.get('equipo')||[];
-    selProf.innerHTML='<option value="">Todas las profesionales</option>'+equipo.map(e=>'<option value="'+e.id+'"'+(profVal==e.id?' selected':'')+'>'+(e.nombre||'')+'</option>').join('');
-  }
-  const profFiltro=selProf?selProf.value:'';
-  // Datos
-  const turnos=(S.get('turnos')||[]).filter(t=>t.fecha&&t.fecha.startsWith(_calYear+'-'+(String(_calMonth+1).padStart(2,'0'))));
-  const clientes=S.get('clientes')||[];
-  const servicios=S.get('servicios')||[];
-  // Días del mes
-  const primerDia=new Date(_calYear,_calMonth,1).getDay(); // 0=dom
-  const diasMes=new Date(_calYear,_calMonth+1,0).getDate();
-  const diasAnt=new Date(_calYear,_calMonth,0).getDate();
+  _actualizarFiltroProf();
+  if(_calView==='mes') _calMes();
+  else if(_calView==='semana') _calSemana();
+  else _calDia();
+}
+function _actualizarFiltroProf(){
+  const sel=document.getElementById('calProfFiltro'); if(!sel)return;
+  const v=sel.value;
+  sel.innerHTML='<option value="">Todas las profesionales</option>'+((S.get('equipo')||[]).map(e=>'<option value="'+e.id+'"'+(v==e.id?' selected':'')+'>'+e.nombre+'</option>').join(''));
+}
+function _profFiltro(){ return (document.getElementById('calProfFiltro')||{}).value||''; }
+function _turnosDelDia(fecha){
+  const pf=_profFiltro();
+  return (S.get('turnos')||[]).filter(t=>t.fecha===fecha&&(!pf||String(t.empleadoId)===pf));
+}
+function _evtColor(estado){ return {confirmado:'confirmado',completado:'completado',cancelado:'cancelado'}[estado]||'pendiente'; }
+
+// ── VISTA MES ──
+function _calMes(){
+  const y=_calRef.getFullYear(), m=_calRef.getMonth();
+  document.getElementById('calTitulo').textContent=new Date(y,m,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+  const clientes=S.get('clientes')||[], servicios=S.get('servicios')||[];
   const hoy=new Date().toISOString().split('T')[0];
+  const primerDia=new Date(y,m,1).getDay();
+  const diasMes=new Date(y,m+1,0).getDate();
+  const diasAnt=new Date(y,m,0).getDate();
   const dias=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  let html=dias.map(d=>'<div class="cal-day-header">'+d+'</div>').join('');
-  // Celdas previas
-  for(let i=0;i<primerDia;i++){
-    const d=diasAnt-primerDia+1+i;
-    html+='<div class="cal-cell other-month"><div class="cal-date">'+d+'</div></div>';
-  }
-  // Días del mes actual
+  let html='<div class="cal-grid">'+dias.map(d=>'<div class="cal-day-header">'+d+'</div>').join('');
+  for(let i=0;i<primerDia;i++) html+='<div class="cal-cell other-month"><div class="cal-date">'+(diasAnt-primerDia+1+i)+'</div></div>';
   for(let d=1;d<=diasMes;d++){
-    const fecha=_calYear+'-'+String(_calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const fecha=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const isHoy=fecha===hoy;
-    let dayTurnos=turnos.filter(t=>t.fecha===fecha);
-    if(profFiltro)dayTurnos=dayTurnos.filter(t=>String(t.profesionalId)===String(profFiltro));
-    dayTurnos.sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
-    const eventos=dayTurnos.slice(0,3).map(t=>{
+    const dayT=_turnosDelDia(fecha).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+    const evts=dayT.slice(0,3).map(t=>{
       const cl=clientes.find(c=>c.id===t.clienteId);
       const sv=servicios.find(s=>s.id===t.servicioId);
-      const nombre=cl?(cl.nombre||''):'?';
-      const hora=(t.hora||'').slice(0,5);
-      return '<div class="cal-event '+(t.estado||'pendiente')+'" title="'+nombre+' – '+(sv?sv.nombre:'')+'">'+hora+' '+nombre+'</div>';
+      return '<div class="cal-event '+_evtColor(t.estado)+'" title="'+(cl?cl.nombre:'?')+' – '+(sv?sv.nombre:'')+'" onclick="editTurno('+t.id+')">'+(t.hora||'').slice(0,5)+' '+(cl?cl.nombre:'?')+'</div>';
     }).join('');
-    const mas=dayTurnos.length>3?'<div style="font-size:.65rem;color:var(--gray-400);padding:1px 5px">+'+( dayTurnos.length-3)+' más</div>':'';
-    html+='<div class="cal-cell'+(isHoy?' today':'')+'"><div class="cal-date">'+d+'</div>'+eventos+mas+'</div>';
+    const mas=dayT.length>3?'<div style="font-size:.65rem;color:var(--gray-400);padding:1px 5px">+'+( dayT.length-3)+' más</div>':'';
+    html+='<div class="cal-cell'+(isHoy?' today':'')+'"><div class="cal-date">'+d+'</div>'+evts+mas+'</div>';
   }
-  // Celdas siguientes
-  const total=primerDia+diasMes;
-  const rest=total%7===0?0:7-(total%7);
+  const rest=(7-((primerDia+diasMes)%7))%7;
   for(let i=1;i<=rest;i++) html+='<div class="cal-cell other-month"><div class="cal-date">'+i+'</div></div>';
-  const grid=document.getElementById('calGrid');
-  if(grid)grid.innerHTML=html;
+  html+='</div>';
+  document.getElementById('calContent').innerHTML=html;
+}
+
+// ── VISTA DÍA ──
+function _calDia(){
+  const fecha=_calRef.toISOString().split('T')[0];
+  document.getElementById('calTitulo').textContent=_calRef.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const turnos=_turnosDelDia(fecha).filter(t=>t.estado!=='cancelado');
+  document.getElementById('calContent').innerHTML='<div class="cal-tl-container">'+_timelineHTML([{fecha,turnos}],false)+'</div>';
+}
+
+// ── VISTA SEMANA ──
+function _calSemana(){
+  const dow=_calRef.getDay();
+  const lunes=new Date(_calRef.getTime()-(dow===0?6:dow-1)*86400000);
+  const dias=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(lunes.getTime()+i*86400000);
+    const fecha=d.toISOString().split('T')[0];
+    dias.push({d,fecha,turnos:_turnosDelDia(fecha).filter(t=>t.estado!=='cancelado')});
+  }
+  const hoy=new Date().toISOString().split('T')[0];
+  const ini=dias[0].d, fin=dias[6].d;
+  document.getElementById('calTitulo').textContent=ini.toLocaleDateString('es-AR',{day:'numeric',month:'short'})+' – '+fin.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'});
+  const nomDias=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const headCols=dias.map((x,i)=>'<div class="cal-week-dcol'+(x.fecha===hoy?' hoy':'')+'">'+nomDias[i]+'<br>'+x.d.getDate()+'</div>').join('');
+  const head='<div class="cal-week-head"><div class="cal-week-head-space"></div>'+headCols+'</div>';
+  document.getElementById('calContent').innerHTML='<div class="cal-tl-container">'+head+_timelineHTML(dias,true)+'</div>';
+}
+
+// ── TIMELINE COMPARTIDO (día y semana) ──
+function _timelineHTML(cols,multi){
+  const clientes=S.get('clientes')||[], servicios=S.get('servicios')||[], equipo=S.get('equipo')||[];
+  const horas=[];
+  for(let h=CAL_HORA_INI;h<=CAL_HORA_FIN;h++) horas.push(h);
+  // Eje de horas
+  let axis='<div class="cal-axis">';
+  horas.forEach(h=>{ axis+='<div class="cal-axis-lbl">'+String(h).padStart(2,'0')+':00</div>'; });
+  axis+='</div>';
+  // Líneas horizontales
+  let gridLines='';
+  horas.forEach((h,i)=>{ gridLines+='<div class="cal-hour-line" style="top:'+calPx(i*60)+'px"></div>'; });
+  // Línea "ahora"
+  const ahora=new Date();
+  const ahoraFecha=ahora.toISOString().split('T')[0];
+  const ahoraMins=ahora.getHours()*60+ahora.getMinutes();
+  const ahoraTop=calPx(ahoraMins-CAL_HORA_INI*60);
+  // Columnas de eventos
+  let colsHTML='';
+  cols.forEach((col,ci)=>{
+    const esHoy=col.fecha===ahoraFecha;
+    const nowLine=esHoy&&ahoraTop>=0&&ahoraTop<=CAL_TOTAL_H?'<div class="cal-now-line" style="top:'+ahoraTop+'px"><div class="cal-now-dot"></div></div>':'';
+    const evts=col.turnos.sort((a,b)=>(a.hora||'').localeCompare(b.hora||'')).map(t=>{
+      const cl=clientes.find(c=>c.id===t.clienteId);
+      const sv=servicios.find(s=>s.id===t.servicioId);
+      const prof=equipo.find(e=>e.id===t.empleadoId);
+      const dur=sv?(sv.duracion||60):60;
+      const top=calTop(t.hora||'08:00');
+      const h=Math.max(calH(dur),22);
+      const nombre=(cl?cl.nombre+' '+(cl.apellido||'').trim():'?');
+      const svNombre=sv?sv.nombre:'';
+      const profNombre=prof?prof.nombre:'';
+      const horaFin=_addMins(t.hora||'08:00',dur);
+      return '<div class="cal-evt-blk '+_evtColor(t.estado)+'" style="top:'+top+'px;height:'+h+'px" onclick="editTurno('+t.id+')" title="'+nombre+' – '+svNombre+'"><div>'+( t.hora||'').slice(0,5)+' – '+horaFin+'</div><div style="font-weight:700">'+nombre+'</div>'+(svNombre?'<div style="opacity:.8;font-size:.67rem">'+svNombre+(profNombre?' · '+profNombre:'')+'</div>':'')+'</div>';
+    }).join('');
+    colsHTML+='<div class="cal-tl-col'+(multi?' ':' ')+'">'+nowLine+evts+'</div>';
+  });
+  return '<div class="cal-tl-wrap"><div style="display:flex;width:100%;min-height:'+CAL_TOTAL_H+'px">'+axis+'<div class="cal-tl-body" style="flex:1;position:relative;min-height:'+CAL_TOTAL_H+'px">'+gridLines+'<div class="cal-tl-cols">'+colsHTML+'</div></div></div></div>';
+}
+function _addMins(hora,mins){
+  const [h,m]=(hora||'00:00').split(':').map(Number);
+  const total=h*60+m+mins;
+  return String(Math.floor(total/60)%24).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
 }
 
 // ═══════════════════════════════════════════════════════════════════════
