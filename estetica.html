@@ -730,24 +730,52 @@ const SUPABASE_URL = 'https://ztqldxoohxzkddjiwyjo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0cWxkeG9vaHh6a2Rkaml3eWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMzM2ODksImV4cCI6MjA5MjkwOTY4OX0.XySy_FCtuLl1ks9E3tRdOWuYczjO2ze8k9CDaE2Wi_I';
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ── STORE (cache local + sync a Supabase) ──────────────────────
+// ── STORE: localStorage (primario) + Supabase (backup nube) ──────────
 const _cache = {};
+const _LS = 'mc_'; // prefijo localStorage
 const S = {
   get: k => (_cache[k] !== undefined ? _cache[k] : null),
   set: (k, v) => {
     _cache[k] = v;
-    _sb.from('app_data').upsert({key: k, value: v, updated_at: new Date().toISOString()})
-      .then(({error}) => { if(error) console.warn('Supabase write error:', error.message); });
+    // 1. localStorage: sincrono, siempre funciona
+    try { localStorage.setItem(_LS+k, JSON.stringify(v)); } catch(e) {}
+    // 2. Supabase: backup en la nube, asincrono
+    _sb.from('app_data').upsert({key:k, value:v, updated_at:new Date().toISOString()})
+      .then(({error})=>{ if(error) console.warn('Supabase sync:', error.message); });
   },
   loadAll: async () => {
-    const {data, error} = await _sb.from('app_data').select('key, value');
-    if(error){ console.warn('Supabase load error:', error.message); return false; }
-    if(data) data.forEach(r => { _cache[r.key] = r.value; });
+    // Paso 1: cargar localStorage al cache (fallback confiable, instantaneo)
+    try {
+      for(let i=0;i<localStorage.length;i++){
+        const k=localStorage.key(i);
+        if(k&&k.startsWith(_LS)){
+          try{ _cache[k.slice(_LS.length)]=JSON.parse(localStorage.getItem(k)); }catch(e){}
+        }
+      }
+    } catch(e){}
+    // Paso 2: intentar Supabase (puede tener datos mas recientes / otro dispositivo)
+    try {
+      const {data,error}=await _sb.from('app_data').select('key,value');
+      if(!error&&data&&data.length>0){
+        data.forEach(r=>{
+          _cache[r.key]=r.value;
+          try{localStorage.setItem(_LS+r.key,JSON.stringify(r.value));}catch(e){}
+        });
+        console.log('Datos cargados desde Supabase ('+data.length+' claves)');
+      } else {
+        console.log('Usando datos locales (Supabase vacio o sin conexion)');
+      }
+    } catch(e){ console.warn('Supabase no disponible, usando localStorage'); }
     return true;
   },
   clearAll: async () => {
-    await _sb.from('app_data').delete().neq('key','__placeholder__');
-    Object.keys(_cache).forEach(k => delete _cache[k]);
+    try{
+      const ks=[];
+      for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(_LS))ks.push(k);}
+      ks.forEach(k=>localStorage.removeItem(k));
+    }catch(e){}
+    try{ await _sb.from('app_data').delete().neq('key','__placeholder__'); }catch(e){}
+    Object.keys(_cache).forEach(k=>delete _cache[k]);
   }
 };
 function nid(type){const ids=S.get('nextId')||{};const n=ids[type]||1;ids[type]=n+1;S.set('nextId',ids);return n;}
