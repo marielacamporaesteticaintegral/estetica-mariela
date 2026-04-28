@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mariela Campora – Estética Integral</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--primary:#7C3AED;--primary-light:#EDE9FE;--primary-dark:#5B21B6;--pink:#EC4899;--pink-light:#FCE7F3;--green:#10B981;--green-light:#D1FAE5;--orange:#F59E0B;--orange-light:#FEF3C7;--red:#EF4444;--red-light:#FEE2E2;--blue:#3B82F6;--blue-light:#DBEAFE;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--gray-700:#374151;--gray-800:#1F2937;--gray-900:#111827;--sidebar-w:240px;--shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);--shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);--shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);--radius:10px}
@@ -725,103 +724,101 @@ tr:hover td{background:var(--gray-50)}
 
 <div id="toast"></div>
 <script>
-// ── SUPABASE CONFIG ──────────────────────────────────────────────────
-const SUPABASE_URL = 'https://ztqldxoohxzkddjiwyjo.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0cWxkeG9vaHh6a2Rkaml3eWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMzM2ODksImV4cCI6MjA5MjkwOTY4OX0.XySy_FCtuLl1ks9E3tRdOWuYczjO2ze8k9CDaE2Wi_I';
-const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ── SUPABASE via fetch() nativo — sin CDN externo ────────────────────
+// fetch() es nativo del navegador: no hay dependencia externa que pueda fallar.
+const SB_URL = 'https://ztqldxoohxzkddjiwyjo.supabase.co/rest/v1/app_data';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0cWxkeG9vaHh6a2Rkaml3eWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMzM2ODksImV4cCI6MjA5MjkwOTY4OX0.XySy_FCtuLl1ks9E3tRdOWuYczjO2ze8k9CDaE2Wi_I';
+const SBH  = () => ({ 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' });
 
-// ── STORE ────────────────────────────────────────────────────────────
-// Arquitectura: localStorage como fuente primaria (instantaneo, sin red),
-// Supabase como backup en la nube (asincrono, no bloquea).
-const _P = 'mc2_'; // prefijo localStorage
-const _cache = {};
-
+// ── STORAGE: localStorage (cache local) + Supabase (nube multi-dispositivo)
+const _P = 'est_';
 const S = {
-  // Lee: cache → localStorage → null
+  // Lee desde localStorage — instantáneo
   get(k) {
-    if (_cache[k] !== undefined) return _cache[k];
-    try {
-      const v = localStorage.getItem(_P + k);
-      if (v !== null) { _cache[k] = JSON.parse(v); return _cache[k]; }
-    } catch(e) {}
-    return null;
+    try { const v = localStorage.getItem(_P+k); return v !== null ? JSON.parse(v) : null; }
+    catch(e) { return null; }
   },
 
-  // Escribe: cache + localStorage (sincrono) y Supabase (asincrono)
+  // Escribe en localStorage y sube a Supabase en segundo plano
   set(k, v) {
-    _cache[k] = v;
-    try { localStorage.setItem(_P + k, JSON.stringify(v)); } catch(e) {}
-    _sb.from('app_data').upsert({key: k, value: v, updated_at: new Date().toISOString()})
-      .then(({error}) => { if (error) console.warn('[Supabase write]', error.message); })
-      .catch(() => {});
+    try { localStorage.setItem(_P+k, JSON.stringify(v)); } catch(e) {}
+    fetch(SB_URL, {
+      method: 'POST',
+      headers: { ...SBH(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ key: k, value: v, updated_at: new Date().toISOString() })
+    }).catch(() => {});
   },
 
-  // Carga localStorage al cache (sincrono, instantaneo)
-  loadLocal() {
+  // Descarga TODO desde Supabase → actualiza localStorage → devuelve si había datos
+  async pullCloud() {
     try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith(_P)) {
-          try { _cache[k.slice(_P.length)] = JSON.parse(localStorage.getItem(k)); } catch(e) {}
-        }
-      }
-    } catch(e) {}
+      const r = await fetch(SB_URL + '?select=key,value', { headers: SBH() });
+      if (!r.ok) return false;
+      const rows = await r.json();
+      if (!Array.isArray(rows) || !rows.length) return false;
+      rows.forEach(row => {
+        try { localStorage.setItem(_P + row.key, JSON.stringify(row.value)); } catch(e) {}
+      });
+      return true;
+    } catch(e) { return false; }
   },
 
-  // Sincroniza con Supabase en segundo plano (no bloquea UI)
-  syncCloud() {
-    _sb.from('app_data').select('key,value')
-      .then(({data, error}) => {
-        if (error || !data || !data.length) return;
-        let changed = false;
-        data.forEach(r => {
-          // Solo actualizar si Supabase tiene datos mas recientes
-          _cache[r.key] = r.value;
-          try { localStorage.setItem(_P + r.key, JSON.stringify(r.value)); } catch(e) {}
-          changed = true;
-        });
-        if (changed && typeof currentPage !== 'undefined') {
-          renderPage(currentPage); // re-render pagina actual con datos cloud
-        }
-      })
-      .catch(() => {});
-  },
-
+  // Borra todo (local + nube)
   clearAll() {
-    try {
-      const keys = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith(_P)) keys.push(k);
-      }
-      keys.forEach(k => localStorage.removeItem(k));
-    } catch(e) {}
-    _sb.from('app_data').delete().neq('key','__placeholder__').catch(()=>{});
-    Object.keys(_cache).forEach(k => delete _cache[k]);
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(_P)) keys.push(k);
+    }
+    keys.forEach(k => localStorage.removeItem(k));
+    fetch(SB_URL + '?key=neq.__placeholder__', { method: 'DELETE', headers: SBH() }).catch(() => {});
   }
 };
 
 function nid(type) { const ids=S.get('nextId')||{}; const n=ids[type]||1; ids[type]=n+1; S.set('nextId',ids); return n; }
 
-// ── AUTH ─────────────────────────────────────────────────────────────
+// ── USUARIOS ─────────────────────────────────────────────────────────
 const USERS = [
-  {user:'admin',    pass:'admin123', name:'Administrador',   role:'admin'},
-  {user:'maria',   pass:'maria123', name:'María Suárez',     role:'profesional', empleadoId:1},
-  {user:'daniela', pass:'dani123',  name:'Daniela Castro',   role:'profesional', empleadoId:2},
-  {user:'romina',  pass:'romi123',  name:'Romina Vega',      role:'profesional', empleadoId:3},
+  { user:'admin',    pass:'admin123', name:'Administrador',  role:'admin' },
+  { user:'maria',    pass:'maria123', name:'María Suárez',   role:'profesional', empleadoId:1 },
+  { user:'daniela',  pass:'dani123',  name:'Daniela Castro', role:'profesional', empleadoId:2 },
+  { user:'romina',   pass:'romi123',  name:'Romina Vega',    role:'profesional', empleadoId:3 },
 ];
 let CU = null;
 
-function doLogin() {
+async function doLogin() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value.trim();
   const found = USERS.find(x => x.user === u && x.pass === p);
   if (!found) { document.getElementById('loginError').textContent = 'Usuario o contraseña incorrectos'; return; }
 
-  // 1. Cargar localStorage al cache — instantaneo, sin esperar red
-  S.loadLocal();
+  const btn = document.querySelector('.btn-login');
+  btn.disabled = true;
 
-  // 2. Mostrar la app inmediatamente
+  // ¿Este dispositivo ya tiene datos locales?
+  const tieneLocal = localStorage.getItem(_P + 'clientes') !== null;
+
+  if (tieneLocal) {
+    // Dispositivo conocido: entra al instante con datos locales.
+    // La nube sincroniza en segundo plano y actualiza la vista si hay cambios.
+    btn.textContent = 'Ingresando...';
+    setTimeout(async () => {
+      const synced = await S.pullCloud();
+      if (synced && typeof currentPage !== 'undefined') renderPage(currentPage);
+    }, 500);
+  } else {
+    // Dispositivo nuevo: esperar hasta 6s a Supabase para bajar los datos reales.
+    btn.textContent = 'Sincronizando datos...';
+    await Promise.race([
+      S.pullCloud(),
+      new Promise(r => setTimeout(r, 6000))
+    ]);
+  }
+
+  btn.textContent = 'Ingresar';
+  btn.disabled = false;
+
+  // Mostrar app
   CU = found;
   document.getElementById('loginPage').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
@@ -830,9 +827,6 @@ function doLogin() {
   document.getElementById('sidebarRole').textContent = found.role === 'admin' ? 'Administrador' : 'Profesional';
   applyRoles();
   initApp();
-
-  // 3. Sincronizar con Supabase en segundo plano (actualiza si hay datos mas recientes)
-  S.syncCloud();
 }
 
 function doLogout() {
@@ -843,6 +837,13 @@ function doLogout() {
 }
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// Sincronización automática cada 60 segundos (multi-usuario en tiempo real)
+setInterval(async () => {
+  if (!CU) return;
+  const synced = await S.pullCloud();
+  if (synced && typeof currentPage !== 'undefined') renderPage(currentPage);
+}, 60000);
 
 function applyRoles(){
   const isAdmin=CU&&CU.role==='admin';
