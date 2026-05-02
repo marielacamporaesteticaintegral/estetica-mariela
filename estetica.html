@@ -55,8 +55,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray-50);color
 .btn-danger:hover{opacity:.85}
 .btn-sm{padding:5px 12px;font-size:.8rem}
 .content{padding:28px;flex:1}
+.content.fullbleed{padding:0}
 .page{display:none}
 .page.active{display:block}
+#pageCalendario{display:none;flex-direction:column;height:calc(100vh - 57px)}
+#pageCalendario.active{display:flex}
+#pageCalendario .cal-top-bar{padding:16px 24px 0;flex-shrink:0}
+#pageCalendario .cal-nav{padding:0 24px 12px;flex-shrink:0}
+#pageCalendario #calContent{flex:1;overflow:hidden;display:flex;flex-direction:column}
+#pageCalendario .cal-tl-container{flex:1;display:flex;flex-direction:column;overflow:hidden;border-radius:0;box-shadow:none;border-top:1px solid var(--gray-100)}
+#pageCalendario .cal-week-head{flex-shrink:0}
+#pageCalendario .cal-tl-wrap{flex:1;max-height:none!important;overflow-y:auto}
+#pageCalendario .cal-grid{flex:1;grid-auto-rows:1fr;align-content:start}
+#pageCalendario .cal-grid-wrap{flex:1;overflow-y:auto;padding:0 24px 16px}
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
 .stat-card{background:white;border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px}
 .stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
@@ -382,7 +393,7 @@ tr:hover td{background:var(--gray-50)}
 
 <!-- CALENDARIO -->
 <div class="page" id="pageCalendario">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+  <div class="cal-top-bar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
     <div class="cal-view-tabs">
       <button class="cal-view-tab active" id="calTabDia" onclick="setCalView('dia')">Día</button>
       <button class="cal-view-tab" id="calTabSemana" onclick="setCalView('semana')">Semana</button>
@@ -390,7 +401,7 @@ tr:hover td{background:var(--gray-50)}
     </div>
     <select id="calProfFiltro" class="field" style="width:190px;margin:0;font-size:.82rem" onchange="renderCalendario()"><option value="">Todas las profesionales</option></select>
   </div>
-  <div class="cal-nav">
+  <div class="cal-nav" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
     <button class="btn btn-secondary btn-sm" onclick="calNavPrev()">◀ Anterior</button>
     <h3 id="calTitulo"></h3>
     <div style="display:flex;gap:6px">
@@ -549,6 +560,9 @@ function goTo(page) {
   document.getElementById('topbarTitle').textContent = cfg.title || page;
   const btn = document.getElementById('topbarAction');
   btn.textContent = cfg.action || ''; btn.style.display = cfg.action ? '' : 'none';
+  // Pantalla completa para el calendario
+  const contentEl = document.querySelector('.content');
+  if (contentEl) contentEl.classList.toggle('fullbleed', page === 'calendario');
   currentPage = page;
   closeSidebar();
   const navItem = document.querySelector('.nav-item[data-page="'+page+'"]');
@@ -1148,41 +1162,55 @@ function _calMes(){
   const rest=(7-((primerDia+diasMes)%7))%7;
   for(let i=1;i<=rest;i++) html+='<div class="cal-cell other-month"><div class="cal-date">'+i+'</div></div>';
   html+='</div>';
-  document.getElementById('calContent').innerHTML=html;
+  document.getElementById('calContent').innerHTML='<div class="cal-grid-wrap">'+html+'</div>';
 }
 
-// ── VISTA DÍA ──
+// ── VISTA DÍA: dos columnas, una por gabinete ──
 function _calDia(){
   const fecha=_calRef.toISOString().split('T')[0];
   document.getElementById('calTitulo').textContent=_calRef.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const turnos=_turnosDelDia(fecha).filter(t=>t.estado!=='cancelado');
-  document.getElementById('calContent').innerHTML='<div class="cal-tl-container">'+_timelineHTML([{fecha,turnos}],false)+'</div>';
+  const todos=_turnosDelDia(fecha).filter(t=>t.estado!=='cancelado');
+  const g1=todos.filter(t=>String(t.gabinete)==='1');
+  const g2=todos.filter(t=>String(t.gabinete)==='2');
+  const sinGab=todos.filter(t=>!t.gabinete||t.gabinete==='');
+  const cols=[
+    {label:'🛋️ Gabinete 1',turnos:g1,fecha,isHoy:true,bg:'#7C3AED0D'},
+    {label:'🛋️ Gabinete 2',turnos:g2,fecha,isHoy:true,bg:'#EC48990D'},
+  ];
+  if(sinGab.length) cols.push({label:'⚠️ Sin gabinete',turnos:sinGab,fecha,bg:'#FEF3C7'});
+  document.getElementById('calContent').innerHTML='<div class="cal-tl-container">'+_timelineHTML(cols)+'</div>';
 }
 
-// ── VISTA SEMANA ──
+// ── VISTA SEMANA: 7 días × 2 gabinetes = 14 columnas ──
 function _calSemana(){
   const dow=_calRef.getDay();
   const lunes=new Date(_calRef.getTime()-(dow===0?6:dow-1)*86400000);
-  const dias=[];
+  const hoy=new Date().toISOString().split('T')[0];
+  const nomDias=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const cols=[];
   for(let i=0;i<7;i++){
     const d=new Date(lunes.getTime()+i*86400000);
     const fecha=d.toISOString().split('T')[0];
-    dias.push({d,fecha,turnos:_turnosDelDia(fecha).filter(t=>t.estado!=='cancelado')});
+    const esHoy=fecha===hoy;
+    const todos=_turnosDelDia(fecha).filter(t=>t.estado!=='cancelado');
+    const g1=todos.filter(t=>String(t.gabinete)==='1');
+    const g2=todos.filter(t=>String(t.gabinete)==='2');
+    cols.push({label:nomDias[i]+' '+d.getDate()+'<br><small style="font-weight:400;opacity:.7">G1</small>',turnos:g1,fecha,isHoy:esHoy,bg:esHoy?'#7C3AED08':'#7C3AED05',borderLeft:i>0?'2px solid var(--gray-200)':'none'});
+    cols.push({label:'&nbsp;<br><small style="font-weight:400;opacity:.7">G2</small>',turnos:g2,fecha,isHoy:esHoy,bg:esHoy?'#EC489908':'transparent'});
   }
-  const hoy=new Date().toISOString().split('T')[0];
-  const ini=dias[0].d, fin=dias[6].d;
+  const ini=new Date(lunes), fin=new Date(lunes.getTime()+6*86400000);
   document.getElementById('calTitulo').textContent=ini.toLocaleDateString('es-AR',{day:'numeric',month:'short'})+' – '+fin.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'});
-  const nomDias=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  const headCols=dias.map((x,i)=>'<div class="cal-week-dcol'+(x.fecha===hoy?' hoy':'')+'">'+nomDias[i]+'<br>'+x.d.getDate()+'</div>').join('');
-  const head='<div class="cal-week-head"><div class="cal-week-head-space"></div>'+headCols+'</div>';
-  document.getElementById('calContent').innerHTML='<div class="cal-tl-container">'+head+_timelineHTML(dias,true)+'</div>';
+  document.getElementById('calContent').innerHTML='<div class="cal-tl-container">'+_timelineHTML(cols)+'</div>';
 }
 
-// ── TIMELINE COMPARTIDO (día y semana) ──
-function _timelineHTML(cols,multi){
+// ── TIMELINE COMPARTIDO ──
+function _timelineHTML(cols){
   const clientes=S.get('clientes')||[], servicios=S.get('servicios')||[], equipo=S.get('equipo')||[];
   const horas=[];
   for(let h=CAL_HORA_INI;h<=CAL_HORA_FIN;h++) horas.push(h);
+  // Header de columnas
+  const headCols=cols.map(c=>'<div class="cal-week-dcol'+(c.isHoy?' hoy':'')+'"style="'+(c.borderLeft?'border-left:'+c.borderLeft:'')+'">'+c.label+'</div>').join('');
+  const head='<div class="cal-week-head"><div class="cal-week-head-space"></div>'+headCols+'</div>';
   // Eje de horas
   let axis='<div class="cal-axis">';
   horas.forEach(h=>{ axis+='<div class="cal-axis-lbl">'+String(h).padStart(2,'0')+':00</div>'; });
@@ -1196,26 +1224,31 @@ function _timelineHTML(cols,multi){
   const ahoraMins=ahora.getHours()*60+ahora.getMinutes();
   const ahoraTop=calPx(ahoraMins-CAL_HORA_INI*60);
   // Columnas de eventos
-  let colsHTML='';
-  cols.forEach((col,ci)=>{
+  const colsHTML=cols.map(col=>{
     const esHoy=col.fecha===ahoraFecha;
     const nowLine=esHoy&&ahoraTop>=0&&ahoraTop<=CAL_TOTAL_H?'<div class="cal-now-line" style="top:'+ahoraTop+'px"><div class="cal-now-dot"></div></div>':'';
-    const evts=col.turnos.sort((a,b)=>(a.hora||'').localeCompare(b.hora||'')).map(t=>{
+    const bg=col.bg?'background:'+col.bg+';':'';
+    const bl=col.borderLeft?'border-left:'+col.borderLeft+';':'';
+    const evts=(col.turnos||[]).sort((a,b)=>(a.hora||'').localeCompare(b.hora||'')).map(t=>{
       const cl=clientes.find(c=>c.id===t.clienteId);
       const sv=servicios.find(s=>s.id===t.servicioId);
       const prof=equipo.find(e=>e.id===t.empleadoId);
       const dur=sv?(sv.duracion||60):60;
       const top=calTop(t.hora||'08:00');
       const h=Math.max(calH(dur),22);
-      const nombre=(cl?cl.nombre+' '+(cl.apellido||'').trim():'?');
+      const nombre=cl?cl.nombre+' '+(cl.apellido||'').trim():'?';
       const svNombre=sv?sv.nombre:'';
       const profNombre=prof?prof.nombre:'';
       const horaFin=_addMins(t.hora||'08:00',dur);
-      return '<div class="cal-evt-blk '+_evtColor(t.estado)+'" style="top:'+top+'px;height:'+h+'px" onclick="editTurno('+t.id+')" title="'+nombre+' – '+svNombre+'"><div>'+( t.hora||'').slice(0,5)+' – '+horaFin+'</div><div style="font-weight:700">'+nombre+'</div>'+(svNombre?'<div style="opacity:.8;font-size:.67rem">'+svNombre+(profNombre?' · '+profNombre:'')+'</div>':'')+'</div>';
+      return '<div class="cal-evt-blk '+_evtColor(t.estado)+'" style="top:'+top+'px;height:'+h+'px" onclick="editTurno('+t.id+')" title="'+nombre+' – '+svNombre+'">'
+        +'<div>'+(t.hora||'').slice(0,5)+' – '+horaFin+'</div>'
+        +'<div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nombre+'</div>'
+        +(svNombre&&h>40?'<div style="opacity:.8;font-size:.65rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+svNombre+(profNombre?' · '+profNombre:'')+'</div>':'')
+        +'</div>';
     }).join('');
-    colsHTML+='<div class="cal-tl-col'+(multi?' ':' ')+'">'+nowLine+evts+'</div>';
-  });
-  return '<div class="cal-tl-wrap"><div style="display:flex;width:100%;min-height:'+CAL_TOTAL_H+'px">'+axis+'<div class="cal-tl-body" style="flex:1;position:relative;min-height:'+CAL_TOTAL_H+'px">'+gridLines+'<div class="cal-tl-cols">'+colsHTML+'</div></div></div></div>';
+    return '<div class="cal-tl-col" style="'+bg+bl+'">'+nowLine+evts+'</div>';
+  }).join('');
+  return head+'<div class="cal-tl-wrap"><div style="display:flex;width:100%;min-height:'+CAL_TOTAL_H+'px">'+axis+'<div class="cal-tl-body" style="flex:1;position:relative;min-height:'+CAL_TOTAL_H+'px">'+gridLines+'<div class="cal-tl-cols">'+colsHTML+'</div></div></div></div>';
 }
 function _addMins(hora,mins){
   const [h,m]=(hora||'00:00').split(':').map(Number);
