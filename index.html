@@ -789,16 +789,18 @@ function renderTurnos() {
     return '<tr><td><strong>'+fmtDate(t.fecha)+'</strong><br><small>'+t.hora+'</small></td><td>'+c.nombre+' '+c.apellido+'</td><td>'+s.nombre+'</td><td>'+(e.nombre||'–')+' '+(e.apellido||'')+'</td><td>'+fmt(t.precio)+'</td><td>'+badgeEstado(t.estado)+'</td><td><button class="action-btn" onclick="editTurno('+t.id+')">✏️</button><button class="action-btn" onclick="deleteTurno('+t.id+')">🗑️</button></td></tr>';
   }).join('');
 }
-function openModalTurno(fecha) {
+function openModalTurno(fecha, gabinete) {
   fillTurnoSelects();
   document.getElementById('turnoEditId').value='';
-  document.getElementById('modalTurnoTitle').textContent='Nuevo Turno';
+  document.getElementById('modalTurnoTitle').textContent='Nuevo Turno'+(gabinete?' — Gabinete '+gabinete:'');
   document.getElementById('turnoFecha').value=fecha||new Date().toISOString().split('T')[0];
   document.getElementById('turnoHora').value='09:00';
   document.getElementById('turnoEstado').value='pendiente';
   document.getElementById('turnoNotas').value='';
   document.getElementById('turnoPrecio').value='';
-  document.getElementById('turnoGabinete').value='';
+  document.getElementById('turnoGabinete').value=gabinete||'';
+  document.getElementById('turnoFinWrap').style.display='none';
+  document.getElementById('turnoConflictoWrap').style.display='none';
   openModal('modalTurno');
 }
 function editTurno(id) {
@@ -1181,7 +1183,7 @@ function _calDia(){
   document.getElementById('calContent').innerHTML='<div class="cal-tl-container">'+_timelineHTML(cols)+'</div>';
 }
 
-// ── VISTA SEMANA: 7 días × 2 gabinetes = 14 columnas ──
+// ── VISTA SEMANA: 7 columnas, G1 izq / G2 der dentro de cada día ──
 function _calSemana(){
   const dow=_calRef.getDay();
   const lunes=new Date(_calRef.getTime()-(dow===0?6:dow-1)*86400000);
@@ -1193,10 +1195,14 @@ function _calSemana(){
     const fecha=d.toISOString().split('T')[0];
     const esHoy=fecha===hoy;
     const todos=_turnosDelDia(fecha).filter(t=>t.estado!=='cancelado');
-    const g1=todos.filter(t=>String(t.gabinete)==='1');
-    const g2=todos.filter(t=>String(t.gabinete)==='2');
-    cols.push({label:nomDias[i]+' '+d.getDate()+'<br><small style="font-weight:400;opacity:.7">G1</small>',turnos:g1,fecha,isHoy:esHoy,bg:esHoy?'#7C3AED08':'#7C3AED05',borderLeft:i>0?'2px solid var(--gray-200)':'none'});
-    cols.push({label:'&nbsp;<br><small style="font-weight:400;opacity:.7">G2</small>',turnos:g2,fecha,isHoy:esHoy,bg:esHoy?'#EC489908':'transparent'});
+    cols.push({
+      label:nomDias[i]+'<br>'+d.getDate(),
+      fecha, isHoy:esHoy,
+      g1:todos.filter(t=>String(t.gabinete)==='1'),
+      g2:todos.filter(t=>String(t.gabinete)==='2'),
+      sinGab:todos.filter(t=>!t.gabinete||t.gabinete===''),
+      split:true  // render G1 izquierda, G2 derecha dentro de la columna
+    });
   }
   const ini=new Date(lunes), fin=new Date(lunes.getTime()+6*86400000);
   document.getElementById('calTitulo').textContent=ini.toLocaleDateString('es-AR',{day:'numeric',month:'short'})+' – '+fin.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'});
@@ -1208,44 +1214,66 @@ function _timelineHTML(cols){
   const clientes=S.get('clientes')||[], servicios=S.get('servicios')||[], equipo=S.get('equipo')||[];
   const horas=[];
   for(let h=CAL_HORA_INI;h<=CAL_HORA_FIN;h++) horas.push(h);
-  // Header de columnas
-  const headCols=cols.map(c=>'<div class="cal-week-dcol'+(c.isHoy?' hoy':'')+'"style="'+(c.borderLeft?'border-left:'+c.borderLeft:'')+'">'+c.label+'</div>').join('');
+  // Header
+  const headCols=cols.map(c=>{
+    const cls='cal-week-dcol'+(c.isHoy?' hoy':'');
+    if(c.split){
+      // Columna split: cabecera de día + subetiquetas G1 | G2
+      return '<div class="'+cls+'" style="padding:0"><div style="padding:6px 4px 2px;font-weight:700;font-size:.8rem">'+c.label+'</div>'
+        +'<div style="display:flex;border-top:1px solid var(--gray-200)">'
+        +'<div style="flex:1;text-align:center;font-size:.68rem;padding:3px 0;color:#7C3AED;font-weight:700;background:#7C3AED08;border-right:1px solid var(--gray-200)">G1</div>'
+        +'<div style="flex:1;text-align:center;font-size:.68rem;padding:3px 0;color:#EC4899;font-weight:700;background:#EC489908">G2</div>'
+        +'</div></div>';
+    }
+    return '<div class="'+cls+'">'+c.label+'</div>';
+  }).join('');
   const head='<div class="cal-week-head"><div class="cal-week-head-space"></div>'+headCols+'</div>';
-  // Eje de horas
+  // Eje horas
   let axis='<div class="cal-axis">';
   horas.forEach(h=>{ axis+='<div class="cal-axis-lbl">'+String(h).padStart(2,'0')+':00</div>'; });
   axis+='</div>';
-  // Líneas horizontales
+  // Grid lines
   let gridLines='';
   horas.forEach((h,i)=>{ gridLines+='<div class="cal-hour-line" style="top:'+calPx(i*60)+'px"></div>'; });
-  // Línea "ahora"
+  // Línea ahora
   const ahora=new Date();
   const ahoraFecha=ahora.toISOString().split('T')[0];
   const ahoraMins=ahora.getHours()*60+ahora.getMinutes();
   const ahoraTop=calPx(ahoraMins-CAL_HORA_INI*60);
-  // Columnas de eventos
+
+  function _evtHtml(t, extraStyle){
+    const cl=clientes.find(c=>c.id===t.clienteId);
+    const sv=servicios.find(s=>s.id===t.servicioId);
+    const prof=equipo.find(e=>e.id===t.empleadoId);
+    const dur=sv?(sv.duracion||60):60;
+    const top=calTop(t.hora||'08:00');
+    const h=Math.max(calH(dur),22);
+    const nombre=cl?cl.nombre+(cl.apellido?' '+cl.apellido:''):'?';
+    const svNombre=sv?sv.nombre:'';
+    const profNombre=prof?prof.nombre:'';
+    const horaFin=_addMins(t.hora||'08:00',dur);
+    return '<div class="cal-evt-blk '+_evtColor(t.estado)+'" style="top:'+top+'px;height:'+h+'px;'+extraStyle+'" onclick="editTurno('+t.id+')" title="'+nombre+' – '+svNombre+'">'
+      +'<div style="font-size:.65rem">'+(t.hora||'').slice(0,5)+' – '+horaFin+'</div>'
+      +'<div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem">'+nombre+'</div>'
+      +(svNombre&&h>38?'<div style="opacity:.8;font-size:.63rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+svNombre+(profNombre?' · '+profNombre:'')+'</div>':'')
+      +'</div>';
+  }
+
   const colsHTML=cols.map(col=>{
     const esHoy=col.fecha===ahoraFecha;
     const nowLine=esHoy&&ahoraTop>=0&&ahoraTop<=CAL_TOTAL_H?'<div class="cal-now-line" style="top:'+ahoraTop+'px"><div class="cal-now-dot"></div></div>':'';
+    if(col.split){
+      // G1 izquierda (0-50%), G2 derecha (50-100%)
+      const g1Evts=(col.g1||[]).map(t=>_evtHtml(t,'left:1px;right:50%;border-left-color:#7C3AED')).join('');
+      const g2Evts=(col.g2||[]).map(t=>_evtHtml(t,'left:50%;right:1px;border-left-color:#EC4899')).join('');
+      const sinEvts=(col.sinGab||[]).map(t=>_evtHtml(t,'left:1px;right:1px;opacity:.5')).join('');
+      const bg=col.isHoy?'background:linear-gradient(90deg,#7C3AED06 50%,#EC489906 50%)':'background:linear-gradient(90deg,#7C3AED03 50%,#EC489903 50%)';
+      const divider='<div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--gray-100);pointer-events:none"></div>';
+      return '<div class="cal-tl-col" style="'+bg+'">'+nowLine+divider+g1Evts+g2Evts+sinEvts+'</div>';
+    }
     const bg=col.bg?'background:'+col.bg+';':'';
     const bl=col.borderLeft?'border-left:'+col.borderLeft+';':'';
-    const evts=(col.turnos||[]).sort((a,b)=>(a.hora||'').localeCompare(b.hora||'')).map(t=>{
-      const cl=clientes.find(c=>c.id===t.clienteId);
-      const sv=servicios.find(s=>s.id===t.servicioId);
-      const prof=equipo.find(e=>e.id===t.empleadoId);
-      const dur=sv?(sv.duracion||60):60;
-      const top=calTop(t.hora||'08:00');
-      const h=Math.max(calH(dur),22);
-      const nombre=cl?cl.nombre+' '+(cl.apellido||'').trim():'?';
-      const svNombre=sv?sv.nombre:'';
-      const profNombre=prof?prof.nombre:'';
-      const horaFin=_addMins(t.hora||'08:00',dur);
-      return '<div class="cal-evt-blk '+_evtColor(t.estado)+'" style="top:'+top+'px;height:'+h+'px" onclick="editTurno('+t.id+')" title="'+nombre+' – '+svNombre+'">'
-        +'<div>'+(t.hora||'').slice(0,5)+' – '+horaFin+'</div>'
-        +'<div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nombre+'</div>'
-        +(svNombre&&h>40?'<div style="opacity:.8;font-size:.65rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+svNombre+(profNombre?' · '+profNombre:'')+'</div>':'')
-        +'</div>';
-    }).join('');
+    const evts=(col.turnos||[]).map(t=>_evtHtml(t,'')).join('');
     return '<div class="cal-tl-col" style="'+bg+bl+'">'+nowLine+evts+'</div>';
   }).join('');
   return head+'<div class="cal-tl-wrap"><div style="display:flex;width:100%;min-height:'+CAL_TOTAL_H+'px">'+axis+'<div class="cal-tl-body" style="flex:1;position:relative;min-height:'+CAL_TOTAL_H+'px">'+gridLines+'<div class="cal-tl-cols">'+colsHTML+'</div></div></div></div>';
@@ -1265,20 +1293,46 @@ function gabFecha(delta){ const inp=document.getElementById('gabFechaInput'); if
 function renderGabinete(){
   const inp=document.getElementById('gabFechaInput');
   const fecha=inp?inp.value:new Date().toISOString().split('T')[0];
+  const mes=fecha.slice(0,7);
   const todosTurnos=(S.get('turnos')||[]).filter(t=>t.fecha===fecha&&t.estado!=='cancelado');
+  const todosMes=(S.get('turnos')||[]).filter(t=>(t.fecha||'').startsWith(mes)&&t.estado!=='cancelado');
   const equipo=S.get('equipo')||[];
   const clientes=S.get('clientes')||[];
   const servicios=S.get('servicios')||[];
   const grid=document.getElementById('gabineteGrid');
   if(!grid)return;
   const GABINETES=[
-    {num:'1',label:'Gabinete 1',color:'#7C3AED',icon:'🛋️'},
-    {num:'2',label:'Gabinete 2',color:'#EC4899',icon:'🛋️'},
+    {num:'1',label:'Gabinete 1',color:'#7C3AED'},
+    {num:'2',label:'Gabinete 2',color:'#EC4899'},
   ];
-  // Turno sin gabinete asignado
+  const fechaLabel=new Date(fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+
+  // ── DASHBOARD MENSUAL ──
+  const mesLabel=new Date(mes+'-01T12:00').toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+  const stats=GABINETES.map(gab=>{
+    const t=todosMes.filter(x=>String(x.gabinete)===gab.num);
+    const horas=t.reduce((a,x)=>{ const sv=servicios.find(s=>s.id===x.servicioId); return a+(sv?sv.duracion||60:60); },0);
+    const ingresos=t.reduce((a,x)=>a+(x.precio||0),0);
+    return {gab,turnos:t.length,horas:Math.round(horas/60*10)/10,ingresos};
+  });
+  const totalMes=todosMes.length;
+  const dashboard='<div style="background:white;border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 22px;margin-bottom:20px">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><span style="font-size:.95rem;font-weight:700;color:var(--gray-700)">📊 Resumen de '+mesLabel+'</span><span style="font-size:.8rem;color:var(--gray-400)">'+totalMes+' turnos en total</span></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+    +stats.map(s=>'<div style="border-radius:10px;padding:14px 16px;background:'+s.gab.color+'10;border:1.5px solid '+s.gab.color+'30">'
+      +'<div style="font-size:.85rem;font-weight:700;color:'+s.gab.color+';margin-bottom:8px">🛋️ '+s.gab.label+'</div>'
+      +'<div style="display:flex;gap:20px;flex-wrap:wrap">'
+      +'<div><div style="font-size:1.4rem;font-weight:800;color:var(--gray-800)">'+s.turnos+'</div><div style="font-size:.72rem;color:var(--gray-400)">turnos</div></div>'
+      +'<div><div style="font-size:1.4rem;font-weight:800;color:var(--gray-800)">'+s.horas+'h</div><div style="font-size:.72rem;color:var(--gray-400)">ocupadas</div></div>'
+      +(s.ingresos>0?'<div><div style="font-size:1.4rem;font-weight:800;color:var(--green)">$'+s.ingresos.toLocaleString('es-AR')+'</div><div style="font-size:.72rem;color:var(--gray-400)">ingresos</div></div>':'')
+      +'</div></div>'
+    ).join('')
+    +'</div></div>';
+
+  // ── TURNOS DEL DÍA ──
   const sinAsignar=todosTurnos.filter(t=>!t.gabinete||t.gabinete==='');
-  let html=GABINETES.map(gab=>{
-    const misTurnos=todosTurnos.filter(t=>String(t.gabinete)===String(gab.num)).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+  let cardsHtml=GABINETES.map(gab=>{
+    const misTurnos=todosTurnos.filter(t=>String(t.gabinete)===gab.num).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
     const color=gab.color;
     const slots=misTurnos.length?misTurnos.map(t=>{
       const cl=clientes.find(c=>c.id===t.clienteId);
@@ -1287,27 +1341,42 @@ function renderGabinete(){
       const nombre=cl?(cl.nombre+' '+(cl.apellido||'')).trim():'Cliente';
       const servNombre=sv?sv.nombre:'Servicio';
       const profNombre=prof?prof.nombre:'–';
-      const dur=sv&&sv.duracion?sv.duracion:60;
+      const dur=sv?sv.duracion||60:60;
+      const horaFin=_addMins(t.hora||'00:00',dur);
       const badgeColor=t.estado==='confirmado'?'green':t.estado==='completado'?'blue':'orange';
-      return '<div class="gabinete-slot"><div class="gabinete-hora">'+((t.hora||'--:--').slice(0,5))+'</div><div style="flex:1"><div style="font-weight:600;font-size:.88rem">'+nombre+'</div><div style="font-size:.75rem;color:var(--gray-400)">'+servNombre+' · '+dur+' min · 👩 '+profNombre+'</div></div><span class="badge badge-'+badgeColor+'">'+t.estado+'</span><button class="action-btn" onclick="editTurno('+t.id+')" title="Editar">✏️</button></div>';
-    }).join(''):'<div class="gabinete-slot"><span class="gabinete-libre">Libre — sin turnos asignados</span></div>';
+      return '<div class="gabinete-slot">'
+        +'<div class="gabinete-hora">'+((t.hora||'--:--').slice(0,5))+'<div style="font-size:.65rem;font-weight:400;color:var(--gray-400)">'+horaFin+'</div></div>'
+        +'<div style="flex:1"><div style="font-weight:600;font-size:.88rem">'+nombre+'</div>'
+        +'<div style="font-size:.75rem;color:var(--gray-400)">'+servNombre+' · '+dur+' min · 👩 '+profNombre+'</div></div>'
+        +'<span class="badge badge-'+badgeColor+'">'+t.estado+'</span>'
+        +'<button class="action-btn" onclick="editTurno('+t.id+')" title="Editar">✏️</button></div>';
+    }).join(''):'<div class="gabinete-slot"><span class="gabinete-libre">Libre — sin turnos para hoy</span></div>';
     const ocupados=misTurnos.length;
-    return '<div class="gabinete-card"><div class="gabinete-header" style="background:'+color+'18;border-bottom:3px solid '+color+'"><div><div class="gabinete-name">'+gab.icon+' '+gab.label+'</div><div style="font-size:.75rem;color:var(--gray-500);margin-top:2px">'+ocupados+' turno'+(ocupados!==1?'s':'')+' · '+new Date(fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})+'</div></div><button class="btn btn-sm btn-primary" onclick="openModalTurno(\''+fecha+'\')">+ Turno</button></div><div class="gabinete-body">'+slots+'</div></div>';
+    return '<div class="gabinete-card">'
+      +'<div class="gabinete-header" style="background:'+color+'15;border-bottom:3px solid '+color+'">'
+      +'<div><div class="gabinete-name">🛋️ '+gab.label+'</div>'
+      +'<div style="font-size:.75rem;color:var(--gray-500);margin-top:2px">'+ocupados+' turno'+(ocupados!==1?'s':'')+' · '+fechaLabel+'</div></div>'
+      +'<button class="btn btn-sm btn-primary" onclick="openModalTurno(\''+fecha+'\',\''+gab.num+'\')">+ Agendar en '+gab.label+'</button>'
+      +'</div><div class="gabinete-body">'+slots+'</div></div>';
   }).join('');
-  // Mostrar los sin asignar si los hay
+
   if(sinAsignar.length){
     const slotsNA=sinAsignar.sort((a,b)=>(a.hora||'').localeCompare(b.hora||'')).map(t=>{
       const cl=clientes.find(c=>c.id===t.clienteId);
       const sv=servicios.find(s=>s.id===t.servicioId);
       const prof=equipo.find(e=>e.id===t.empleadoId);
       const nombre=cl?(cl.nombre+' '+(cl.apellido||'')).trim():'Cliente';
-      const servNombre=sv?sv.nombre:'Servicio';
-      const profNombre=prof?prof.nombre:'–';
-      return '<div class="gabinete-slot"><div class="gabinete-hora">'+((t.hora||'--:--').slice(0,5))+'</div><div style="flex:1"><div style="font-weight:600;font-size:.88rem">'+nombre+'</div><div style="font-size:.75rem;color:var(--gray-400)">'+servNombre+' · 👩 '+profNombre+'</div></div><button class="action-btn" onclick="editTurno('+t.id+')" title="Asignar gabinete">📌</button></div>';
+      return '<div class="gabinete-slot"><div class="gabinete-hora">'+((t.hora||'--:--').slice(0,5))+'</div>'
+        +'<div style="flex:1"><div style="font-weight:600;font-size:.88rem">'+nombre+'</div>'
+        +'<div style="font-size:.75rem;color:var(--gray-400)">'+(sv?sv.nombre:'')+(prof?' · '+prof.nombre:'')+'</div></div>'
+        +'<button class="action-btn" onclick="editTurno('+t.id+')" title="Asignar gabinete">📌 Asignar</button></div>';
     }).join('');
-    html+='<div class="gabinete-card" style="grid-column:1/-1"><div class="gabinete-header" style="background:#FEF3C722;border-bottom:3px solid #F59E0B"><div><div class="gabinete-name">⚠️ Sin gabinete asignado</div><div style="font-size:.75rem;color:var(--gray-500);margin-top:2px">'+sinAsignar.length+' turno'+(sinAsignar.length!==1?'s':'')+' sin gabinete — editá cada uno para asignar</div></div></div><div class="gabinete-body">'+slotsNA+'</div></div>';
+    cardsHtml+='<div class="gabinete-card" style="grid-column:1/-1"><div class="gabinete-header" style="background:#FEF3C733;border-bottom:3px solid #F59E0B">'
+      +'<div><div class="gabinete-name">⚠️ Sin gabinete asignado</div>'
+      +'<div style="font-size:.75rem;color:var(--gray-500);margin-top:2px">'+sinAsignar.length+' turno'+(sinAsignar.length!==1?'s':'')+' — hacé clic en 📌 para asignarles un gabinete</div></div>'
+      +'</div><div class="gabinete-body">'+slotsNA+'</div></div>';
   }
-  grid.innerHTML=html;
+  grid.innerHTML=dashboard+cardsHtml;
 }
 </script>
 </body>
