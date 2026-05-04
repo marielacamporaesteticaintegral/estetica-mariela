@@ -138,6 +138,8 @@ tr:hover td{background:var(--gray-50)}
 .caja-box{flex:1;min-width:150px;background:white;border-radius:var(--radius);padding:16px 20px;box-shadow:var(--shadow);text-align:center}
 .caja-box .caja-val{font-size:1.5rem;font-weight:700;margin-top:4px}
 #dashCalSemana .cal-tl-wrap{max-height:480px}
+.field-error{font-size:.72rem;color:var(--red);margin-top:3px;font-weight:500;display:block}
+.field input.invalid,.field select.invalid,.field textarea.invalid{border-color:var(--red)!important;background:#fff8f8}
 /* CALENDARIO */
 .cal-view-tabs{display:flex;gap:3px;background:var(--gray-100);padding:4px;border-radius:8px}
 .cal-view-tab{padding:6px 16px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;background:none;color:var(--gray-600);transition:all .15s}
@@ -312,7 +314,7 @@ tr:hover td{background:var(--gray-50)}
     <input class="search-input" type="text" placeholder="Buscar cliente..." id="clientesSearch" oninput="renderClientes()">
     <button class="btn btn-secondary btn-sm" onclick="abrirImportModal('clientes')">📥 Importar Excel</button>
   </div>
-  <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Teléfono</th><th>Email</th><th>Nacimiento</th><th>Notas</th><th></th></tr></thead><tbody id="clientesTbody"></tbody></table></div></div></div>
+  <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Teléfono</th><th>Email</th><th>Nacimiento</th><th>Actividad</th><th></th></tr></thead><tbody id="clientesTbody"></tbody></table></div></div></div>
 </div>
 
 <!-- EQUIPO -->
@@ -455,6 +457,40 @@ tr:hover td{background:var(--gray-50)}
 <div class="modal-overlay" id="modalImport"><div class="modal"><div class="modal-header"><h3 id="importModalTitle">Importar</h3><button class="modal-close" onclick="closeModal('modalImport')">×</button></div><div class="modal-body"><p id="importModalDesc" style="margin-bottom:12px;font-size:.85rem;color:var(--gray-500)"></p><div id="importTemplate" style="background:var(--gray-100);padding:10px;border-radius:8px;font-size:.8rem;margin-bottom:14px"></div><input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="width:100%;margin-bottom:12px" onchange="previewImport(this)"><div id="importPreview" style="display:none"><p style="font-size:.85rem;font-weight:600;margin-bottom:8px">Vista previa (<span id="importCount">0</span> registros):</p><div style="max-height:200px;overflow:auto;border:1px solid var(--gray-200);border-radius:6px"><table style="font-size:.75rem"><thead id="importPreviewHead"></thead><tbody id="importPreviewBody"></tbody></table></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalImport')">Cancelar</button><button class="btn btn-primary" id="importConfirmBtn" onclick="confirmarImport()" disabled>Importar</button></div></div></div>
 
 <div class="modal-overlay" id="modalInsumo"><div class="modal"><div class="modal-header"><h3 id="modalInsumoTitle">Insumo</h3><button class="modal-close" onclick="closeModal('modalInsumo')">×</button></div><div class="modal-body"><input type="hidden" id="insumoEditId"><div class="field"><label>Nombre *</label><input type="text" id="insumoNombre" placeholder="Ej: Aguja 30G, Crema vitamina C..."></div><div class="form-row"><div class="field"><label>Categoría</label><select id="insumoCategoria"><option>Cremas y Aceites</option><option>Descartables</option><option>Agujas y Cánulas</option><option>Higiene y Desinfección</option><option>Equipamiento Menor</option><option>Otros</option></select></div><div class="field"><label>Unidad</label><select id="insumoUnidad"><option value="unidades">Unidades</option><option value="ml">ml</option><option value="gramos">gramos</option><option value="cajas">cajas</option><option value="packs">packs</option></select></div></div><div class="form-row"><div class="field"><label>Stock Actual *</label><input type="number" id="insumoCantidad" value="0" min="0"></div><div class="field"><label>Stock Mínimo</label><input type="number" id="insumoMinimo" value="0" min="0"></div></div><div class="form-row"><div class="field"><label>Proveedor</label><input type="text" id="insumoProveedor" placeholder="Nombre del proveedor"></div><div class="field"><label>Costo Unitario ($)</label><input type="number" id="insumoCosto" value="0" min="0"></div></div><div class="field"><label>Notas</label><textarea id="insumoNotas" rows="2" placeholder="Indicaciones de uso, vencimiento, etc."></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalInsumo')">Cancelar</button><button class="btn btn-primary" onclick="saveInsumo()">Guardar</button></div></div></div>
+<!-- MODAL HISTORIAL CLIENTE -->
+<div class="modal-overlay" id="modalHistorialCliente">
+  <div class="modal" style="width:640px">
+    <div class="modal-header">
+      <div>
+        <h3 id="historialClienteNombre">Historial</h3>
+        <div style="font-size:.75rem;color:var(--gray-400);margin-top:2px">Historial de turnos</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalHistorialCliente')">×</button>
+    </div>
+    <div class="modal-body" id="historialClienteBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalHistorialCliente')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL STATS PROFESIONAL -->
+<div class="modal-overlay" id="modalStatsProf">
+  <div class="modal" style="width:640px">
+    <div class="modal-header">
+      <div>
+        <h3 id="statsProfNombre">Estadísticas</h3>
+        <div style="font-size:.75rem;color:var(--gray-400);margin-top:2px">Rendimiento de la profesional</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalStatsProf')">×</button>
+    </div>
+    <div class="modal-body" id="statsProfBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalStatsProf')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 <script>
 // ═══════════════════════════════════════════════════════════════════════
@@ -869,6 +905,7 @@ function renderTurnos() {
 }
 function openModalTurno(fecha, gabinete) {
   fillTurnoSelects();
+  _clearValidacion(['turnoCliente','turnoServicio','turnoFecha','turnoHora']);
   document.getElementById('turnoEditId').value='';
   document.getElementById('modalTurnoTitle').textContent='Nuevo Turno'+(gabinete?' — Gabinete '+gabinete:'');
   document.getElementById('turnoFecha').value=fecha||new Date().toISOString().split('T')[0];
@@ -899,10 +936,35 @@ function editTurno(id) {
   openModal('modalTurno');
 }
 function deleteTurno(id) { if(!confirm('¿Eliminar turno?'))return; S.set('turnos',(S.get('turnos')||[]).filter(t=>t.id!==id)); renderTurnos(); renderDashboard(); showToast('Turno eliminado'); }
+// ── VALIDACIÓN GENÉRICA ──
+function _validar(reglas){
+  let ok=true;
+  reglas.forEach(r=>{
+    const el=document.getElementById(r.id); if(!el)return;
+    const v=r.test(el.value);
+    el.classList.toggle('invalid',!v);
+    let errEl=el.parentElement.querySelector('.field-error');
+    if(!v){
+      if(!errEl){errEl=document.createElement('span');errEl.className='field-error';el.parentElement.appendChild(errEl);}
+      errEl.textContent=r.msg; ok=false;
+    } else { if(errEl)errEl.remove(); }
+  });
+  return ok;
+}
+function _clearValidacion(ids){
+  ids.forEach(id=>{const el=document.getElementById(id);if(!el)return;el.classList.remove('invalid');const e=el.parentElement.querySelector('.field-error');if(e)e.remove();});
+}
+
 function saveTurno() {
   const id=parseInt(document.getElementById('turnoEditId').value)||null;
+  const ok=_validar([
+    {id:'turnoCliente', test:v=>!!parseInt(v), msg:'Seleccioná un cliente'},
+    {id:'turnoServicio', test:v=>!!parseInt(v), msg:'Seleccioná un servicio'},
+    {id:'turnoFecha',   test:v=>!!v,           msg:'Ingresá la fecha'},
+    {id:'turnoHora',    test:v=>!!v,           msg:'Ingresá la hora de inicio'},
+  ]);
+  if(!ok)return;
   const obj={id:id||Date.now(),clienteId:parseInt(document.getElementById('turnoCliente').value),servicioId:parseInt(document.getElementById('turnoServicio').value),empleadoId:parseInt(document.getElementById('turnoProfesional').value),fecha:document.getElementById('turnoFecha').value,hora:document.getElementById('turnoHora').value,estado:document.getElementById('turnoEstado').value,metodoPago:document.getElementById('turnoMetodoPago').value,notas:document.getElementById('turnoNotas').value,precio:parseFloat(document.getElementById('turnoPrecio').value)||0,gabinete:document.getElementById('turnoGabinete').value};
-  if(!obj.clienteId||!obj.servicioId||!obj.fecha){showToast('Complete los campos requeridos','error');return;}
   // Verificar conflicto de horario
   if(obj.empleadoId&&obj.hora){
     const sv=(S.get('servicios')||[]).find(s=>s.id===obj.servicioId);
@@ -968,6 +1030,120 @@ function _checkConflicto(editId,profId,fecha,hora,dur,wrap){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// HISTORIAL CLIENTE
+// ═══════════════════════════════════════════════════════════════════════
+function verHistorialCliente(id){
+  const c=(S.get('clientes')||[]).find(x=>x.id===id); if(!c)return;
+  const servicios=S.get('servicios')||[], equipo=S.get('equipo')||[];
+  const hoy=new Date().toISOString().split('T')[0];
+  const turnos=(S.get('turnos')||[]).filter(t=>t.clienteId===id).sort((a,b)=>b.fecha.localeCompare(a.fecha)||(b.hora||'').localeCompare(a.hora||''));
+  const activos=turnos.filter(t=>t.estado!=='cancelado');
+  const proximos=turnos.filter(t=>t.fecha>=hoy&&t.estado!=='completado'&&t.estado!=='cancelado');
+  const pasados=turnos.filter(t=>t.fecha<hoy||t.estado==='completado');
+  const totalGastado=activos.reduce((a,t)=>a+(t.precio||0),0);
+  const ticketProm=activos.length?Math.round(totalGastado/activos.length):0;
+  const svCount={};
+  activos.forEach(t=>{if(t.servicioId)svCount[t.servicioId]=(svCount[t.servicioId]||0)+1;});
+  const svFavId=Object.entries(svCount).sort((a,b)=>b[1]-a[1])[0];
+  const svFav=svFavId?(servicios.find(s=>s.id===parseInt(svFavId[0]))||{}).nombre:'—';
+
+  const statCard=(val,lbl,color)=>'<div style="flex:1;min-width:100px;background:'+color+'20;border-radius:10px;padding:12px 14px;text-align:center"><div style="font-size:1.4rem;font-weight:700;color:'+color+'">'+val+'</div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:'+color+'cc;margin-top:2px">'+lbl+'</div></div>';
+
+  const rowTurno=t=>{
+    const sv=servicios.find(s=>s.id===t.servicioId);
+    const prof=equipo.find(e=>e.id===t.empleadoId);
+    const gab=t.gabinete;
+    const gabColor=gab==='1'?'#7C3AED':gab==='2'?'#EC4899':'';
+    const esBg={completado:'#D1FAE5',confirmado:'#EDE9FE',pendiente:'#FEF3C7',cancelado:'#FEE2E2'}[t.estado]||'#F3F4F6';
+    const esC={completado:'#065F46',confirmado:'#5B21B6',pendiente:'#92400E',cancelado:'#991B1B'}[t.estado]||'#374151';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--gray-100)">'
+      +'<div style="min-width:88px;font-size:.78rem;font-weight:700;color:var(--gray-600)">'+fmtDate(t.fecha)+'<br><span style="font-weight:400;color:var(--gray-400)">'+(t.hora||'').slice(0,5)+'</span></div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:.83rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(sv?sv.nombre:'?')+'</div>'
+        +(prof?'<div style="font-size:.7rem;color:var(--gray-400)">'+prof.nombre+' '+prof.apellido+(gab?' · <span style="color:'+gabColor+';font-weight:700">G'+gab+'</span>':'')+'</div>':'')
+      +'</div>'
+      +'<div style="font-size:.83rem;font-weight:700;color:var(--gray-700);white-space:nowrap">'+fmt(t.precio)+'</div>'
+      +'<span style="font-size:.68rem;font-weight:600;background:'+esBg+';color:'+esC+';border-radius:4px;padding:2px 7px;white-space:nowrap">'+t.estado+'</span>'
+      +'</div>';
+  };
+
+  const el=document.getElementById('historialClienteBody');
+  document.getElementById('historialClienteNombre').textContent=c.nombre+' '+c.apellido+(c.instagram?' · '+c.instagram:'');
+  el.innerHTML=
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
+      +statCard(activos.length,'Turnos','#7C3AED')
+      +statCard(fmt(totalGastado),'Total gastado','#10B981')
+      +statCard(fmt(ticketProm),'Ticket prom.','#F59E0B')
+      +statCard(svFav,'Servicio fav.','#EC4899')
+    +'</div>'
+    +(proximos.length?'<div style="margin-bottom:12px"><div style="font-size:.73rem;font-weight:700;text-transform:uppercase;color:var(--primary);margin-bottom:6px">🗓️ Próximos turnos</div>'
+      +proximos.map(t=>{const sv=servicios.find(s=>s.id===t.servicioId);return '<div style="background:var(--primary-light);border-radius:6px;padding:8px 12px;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;font-size:.83rem"><div><strong>'+fmtDate(t.fecha)+'</strong> '+t.hora+' — '+(sv?sv.nombre:'?')+'</div><span class="badge badge-purple">'+t.estado+'</span></div>';}).join('')+'</div>':'')
+    +'<div style="font-size:.73rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);margin-bottom:4px">📋 Historial completo</div>'
+    +'<div style="max-height:320px;overflow-y:auto">'+(turnos.length?turnos.map(rowTurno).join(''):'<div class="empty-state"><div class="empty-icon">📭</div><p>Sin turnos registrados</p></div>')+'</div>';
+  openModal('modalHistorialCliente');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ESTADÍSTICAS POR PROFESIONAL
+// ═══════════════════════════════════════════════════════════════════════
+function verStatsProf(id){
+  const e=(S.get('equipo')||[]).find(x=>x.id===id); if(!e)return;
+  const servicios=S.get('servicios')||[], clientes=S.get('clientes')||[];
+  const hoy=new Date().toISOString().split('T')[0];
+  const mes=hoy.slice(0,7);
+  const mesPasado=new Date(); mesPasado.setMonth(mesPasado.getMonth()-1);
+  const mesPasadoStr=mesPasado.toISOString().slice(0,7);
+  const todos=(S.get('turnos')||[]).filter(t=>String(t.empleadoId)===String(id));
+  const complMes=todos.filter(t=>t.fecha.startsWith(mes)&&t.estado==='completado');
+  const complMesPas=todos.filter(t=>t.fecha.startsWith(mesPasadoStr)&&t.estado==='completado');
+  const complTotal=todos.filter(t=>t.estado==='completado');
+  const facMes=complMes.reduce((a,t)=>a+(t.precio||0),0);
+  const facMesPas=complMesPas.reduce((a,t)=>a+(t.precio||0),0);
+  const facTotal=complTotal.reduce((a,t)=>a+(t.precio||0),0);
+  const comisionMes=Math.round(facMes*(e.comision||0)/100);
+  const proximos=todos.filter(t=>t.fecha>=hoy&&t.estado!=='cancelado'&&t.estado!=='completado');
+  // Servicios más realizados
+  const svCount={};
+  complTotal.forEach(t=>{if(t.servicioId)svCount[t.servicioId]=(svCount[t.servicioId]||0)+1;});
+  const topSvs=Object.entries(svCount).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([sid,cnt])=>{const sv=servicios.find(s=>s.id===parseInt(sid));return {nombre:sv?sv.nombre:'?',cnt};});
+  // Clientes únicos
+  const clientesUnicos=new Set(complTotal.map(t=>t.clienteId)).size;
+  const variacion=facMesPas?Math.round((facMes-facMesPas)/facMesPas*100):null;
+
+  const el=document.getElementById('statsProfBody');
+  document.getElementById('statsProfNombre').textContent=e.nombre+' '+e.apellido+' · '+e.especialidad;
+
+  const statBox=(val,lbl,sub,color)=>'<div style="background:white;border:1px solid var(--gray-100);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow)">'
+    +'<div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);margin-bottom:4px">'+lbl+'</div>'
+    +'<div style="font-size:1.5rem;font-weight:700;color:'+color+'">'+val+'</div>'
+    +(sub?'<div style="font-size:.72rem;color:var(--gray-400);margin-top:2px">'+sub+'</div>':'')
+    +'</div>';
+
+  el.innerHTML=
+    // Mes actual
+    '<div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--primary);margin-bottom:8px">📅 Este mes</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px">'
+      +statBox(complMes.length,'Turnos completos','vs '+complMesPas.length+' mes anterior','var(--primary)')
+      +statBox(fmt(facMes),'Facturado',(variacion!==null?(variacion>=0?'▲ +':'▼ ')+variacion+'% vs mes anterior':''),'var(--green)')
+      +statBox(fmt(comisionMes),'Comisión ('+e.comision+'%)','del facturado del mes','var(--orange)')
+      +statBox(proximos.length,'Próximos turnos','agendados','var(--blue)')
+    +'</div>'
+    // Histórico
+    +'<div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--gray-500);margin-bottom:8px">📊 Histórico total</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px">'
+      +statBox(complTotal.length,'Turnos totales','completados','var(--primary)')
+      +statBox(fmt(facTotal),'Total facturado','desde el inicio','var(--green)')
+      +statBox(clientesUnicos,'Clientas','distintas atendidas','var(--pink)')
+      +statBox(complTotal.length?fmt(Math.round(facTotal/complTotal.length)):'—','Ticket promedio','por turno','var(--orange)')
+    +'</div>'
+    // Top servicios
+    +(topSvs.length?'<div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--gray-500);margin-bottom:8px">✨ Servicios más realizados</div>'
+      +'<div style="display:flex;flex-direction:column;gap:6px">'
+      +topSvs.map((s,i)=>{const pct=Math.round(s.cnt/complTotal.length*100);return '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:.75rem;font-weight:700;color:var(--gray-400);min-width:18px">#'+(i+1)+'</span><div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:.83rem;font-weight:600">'+s.nombre+'</span><span style="font-size:.75rem;color:var(--gray-400)">'+s.cnt+' ('+pct+'%)</span></div><div style="height:5px;border-radius:99px;background:var(--gray-100)"><div style="height:5px;border-radius:99px;background:var(--primary);width:'+pct+'%"></div></div></div></div>';}).join('')
+      +'</div>':'');
+  openModal('modalStatsProf');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // CLIENTES
 // ═══════════════════════════════════════════════════════════════════════
 function renderClientes() {
@@ -975,21 +1151,78 @@ function renderClientes() {
   let list=(S.get('clientes')||[]).filter(c=>!q||(c.nombre+' '+c.apellido+c.email+c.telefono).toLowerCase().includes(q));
   const tbody=document.getElementById('clientesTbody');
   if(!list.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">👥</div><p>Sin clientes</p></div></td></tr>';return;}
-  tbody.innerHTML=list.map(c=>'<tr><td><strong>'+c.nombre+' '+c.apellido+'</strong>'+(c.instagram?'<br><small style="color:var(--pink)">'+c.instagram+'</small>':'')+'</td><td>'+(c.telefono||'–')+'</td><td>'+(c.email||'–')+'</td><td>'+fmtDate(c.nacimiento)+'</td><td style="font-size:.8rem;color:var(--gray-500)">'+(c.notas||'–')+'</td><td><button class="action-btn" onclick="editCliente('+c.id+')">✏️</button><button class="action-btn" onclick="deleteCliente('+c.id+')">🗑️</button></td></tr>').join('');
+  const turnos=S.get('turnos')||[];
+  tbody.innerHTML=list.map(c=>{
+    const nTurnos=turnos.filter(t=>t.clienteId===c.id&&t.estado!=='cancelado').length;
+    const totalG=turnos.filter(t=>t.clienteId===c.id&&t.estado!=='cancelado').reduce((a,t)=>a+(t.precio||0),0);
+    return '<tr>'
+      +'<td><strong>'+c.nombre+' '+c.apellido+'</strong>'+(c.instagram?'<br><small style="color:var(--pink)">'+c.instagram+'</small>':'')+'</td>'
+      +'<td>'+(c.telefono||'–')+'</td>'
+      +'<td>'+(c.email||'–')+'</td>'
+      +'<td>'+fmtDate(c.nacimiento)+'</td>'
+      +'<td style="font-size:.8rem"><span style="font-weight:600;color:var(--primary)">'+nTurnos+'</span> turnos · <span style="color:var(--green);font-weight:600">'+fmt(totalG)+'</span></td>'
+      +'<td><button class="action-btn" title="Ver historial" onclick="verHistorialCliente('+c.id+')">📋</button><button class="action-btn" onclick="editCliente('+c.id+')">✏️</button><button class="action-btn" onclick="deleteCliente('+c.id+')">🗑️</button></td>'
+      +'</tr>';
+  }).join('');
 }
 function openModalCliente(){document.getElementById('clienteEditId').value='';['clienteNombre','clienteApellido','clienteEmail','clienteTel','clienteNac','clienteInsta','clienteNotas'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});openModal('modalCliente');}
 function editCliente(id){const c=(S.get('clientes')||[]).find(x=>x.id===id);if(!c)return;document.getElementById('clienteEditId').value=id;document.getElementById('clienteNombre').value=c.nombre||'';document.getElementById('clienteApellido').value=c.apellido||'';document.getElementById('clienteEmail').value=c.email||'';document.getElementById('clienteTel').value=c.telefono||'';document.getElementById('clienteNac').value=c.nacimiento||'';document.getElementById('clienteInsta').value=c.instagram||'';document.getElementById('clienteNotas').value=c.notas||'';openModal('modalCliente');}
 function deleteCliente(id){if(!confirm('¿Eliminar cliente?'))return;S.set('clientes',(S.get('clientes')||[]).filter(c=>c.id!==id));renderClientes();showToast('Cliente eliminado');}
-function saveCliente(){const id=parseInt(document.getElementById('clienteEditId').value)||null;const obj={id:id||Date.now(),nombre:document.getElementById('clienteNombre').value.trim(),apellido:document.getElementById('clienteApellido').value.trim(),email:document.getElementById('clienteEmail').value.trim(),telefono:document.getElementById('clienteTel').value.trim(),nacimiento:document.getElementById('clienteNac').value,instagram:document.getElementById('clienteInsta').value.trim(),notas:document.getElementById('clienteNotas').value.trim()};if(!obj.nombre||!obj.apellido){showToast('Nombre y apellido requeridos','error');return;}let list=S.get('clientes')||[];if(id){const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=obj;}else list.push(obj);S.set('clientes',list);closeModal('modalCliente');showToast('Cliente guardado','success');renderClientes();}
+function saveCliente(){
+  const ok=_validar([
+    {id:'clienteNombre',  test:v=>v.trim().length>0,  msg:'El nombre es obligatorio'},
+    {id:'clienteApellido',test:v=>v.trim().length>0,  msg:'El apellido es obligatorio'},
+    {id:'clienteEmail',   test:v=>!v||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), msg:'Email no válido'},
+  ]);
+  if(!ok)return;
+  const id=parseInt(document.getElementById('clienteEditId').value)||null;
+  const obj={id:id||Date.now(),nombre:document.getElementById('clienteNombre').value.trim(),apellido:document.getElementById('clienteApellido').value.trim(),email:document.getElementById('clienteEmail').value.trim(),telefono:document.getElementById('clienteTel').value.trim(),nacimiento:document.getElementById('clienteNac').value,instagram:document.getElementById('clienteInsta').value.trim(),notas:document.getElementById('clienteNotas').value.trim()};
+  let list=S.get('clientes')||[];if(id){const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=obj;}else list.push(obj);S.set('clientes',list);closeModal('modalCliente');showToast('Cliente guardado','success');renderClientes();
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // EQUIPO
 // ═══════════════════════════════════════════════════════════════════════
-function renderEquipo(){const list=S.get('equipo')||[];const grid=document.getElementById('equipoGrid');if(!grid)return;grid.innerHTML=list.map(e=>'<div class="team-card"><div class="team-avatar" style="background:'+(e.color||'#7C3AED')+'">'+e.nombre[0]+e.apellido[0]+'</div><h4>'+e.nombre+' '+e.apellido+'</h4><div class="team-rol">'+e.especialidad+'</div><div class="team-actions"><button class="btn btn-sm btn-secondary" onclick="editEmpleado('+e.id+')">Editar</button><button class="btn btn-sm btn-danger" onclick="deleteEmpleado('+e.id+')">Eliminar</button></div></div>').join('');}
+function renderEquipo(){
+  const list=S.get('equipo')||[];
+  const grid=document.getElementById('equipoGrid'); if(!grid)return;
+  const turnos=S.get('turnos')||[];
+  const mes=new Date().toISOString().slice(0,7);
+  grid.innerHTML=list.map(e=>{
+    const tMes=turnos.filter(t=>String(t.empleadoId)===String(e.id)&&t.fecha.startsWith(mes)&&t.estado!=='cancelado');
+    const facMes=tMes.filter(t=>t.estado==='completado').reduce((a,t)=>a+(t.precio||0),0);
+    const comMes=Math.round(facMes*(e.comision||0)/100);
+    return '<div class="team-card">'
+      +'<div class="team-avatar" style="background:'+(e.color||'#7C3AED')+'">'+e.nombre[0]+e.apellido[0]+'</div>'
+      +'<h4>'+e.nombre+' '+e.apellido+'</h4>'
+      +'<div class="team-rol">'+e.especialidad+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:12px 0;text-align:center">'
+        +'<div style="background:var(--primary-light);border-radius:7px;padding:6px 4px"><div style="font-size:1.1rem;font-weight:700;color:var(--primary)">'+tMes.length+'</div><div style="font-size:.62rem;color:var(--primary-dark);font-weight:600">Turnos</div></div>'
+        +'<div style="background:var(--green-light);border-radius:7px;padding:6px 4px"><div style="font-size:.85rem;font-weight:700;color:var(--green)">'+fmt(facMes)+'</div><div style="font-size:.62rem;color:#065F46;font-weight:600">Facturado</div></div>'
+        +'<div style="background:var(--orange-light);border-radius:7px;padding:6px 4px"><div style="font-size:.85rem;font-weight:700;color:var(--orange)">'+fmt(comMes)+'</div><div style="font-size:.62rem;color:#92400E;font-weight:600">Comisión</div></div>'
+      +'</div>'
+      +'<div class="team-actions">'
+        +'<button class="btn btn-sm btn-primary" onclick="verStatsProf('+e.id+')">📊 Stats</button>'
+        +'<button class="btn btn-sm btn-secondary" onclick="editEmpleado('+e.id+')">Editar</button>'
+        +'<button class="btn btn-sm btn-danger" onclick="deleteEmpleado('+e.id+')">Eliminar</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
 function openModalEmpleado(){document.getElementById('empleadoEditId').value='';['empleadoNombre','empleadoApellido','empleadoEsp','empleadoEmail','empleadoTel'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('empleadoComision').value=40;document.getElementById('empleadoActivo').value='1';openModal('modalEmpleado');}
 function editEmpleado(id){const e=(S.get('equipo')||[]).find(x=>x.id===id);if(!e)return;document.getElementById('empleadoEditId').value=id;document.getElementById('empleadoNombre').value=e.nombre||'';document.getElementById('empleadoApellido').value=e.apellido||'';document.getElementById('empleadoEsp').value=e.especialidad||'';document.getElementById('empleadoComision').value=e.comision||40;document.getElementById('empleadoEmail').value=e.email||'';document.getElementById('empleadoTel').value=e.telefono||'';document.getElementById('empleadoActivo').value=e.activo?'1':'0';openModal('modalEmpleado');}
 function deleteEmpleado(id){if(!confirm('¿Eliminar empleada?'))return;S.set('equipo',(S.get('equipo')||[]).filter(e=>e.id!==id));renderEquipo();showToast('Eliminado');}
-function saveEmpleado(){const id=parseInt(document.getElementById('empleadoEditId').value)||null;const obj={id:id||Date.now(),nombre:document.getElementById('empleadoNombre').value.trim(),apellido:document.getElementById('empleadoApellido').value.trim(),especialidad:document.getElementById('empleadoEsp').value.trim(),comision:parseInt(document.getElementById('empleadoComision').value)||40,email:document.getElementById('empleadoEmail').value.trim(),telefono:document.getElementById('empleadoTel').value.trim(),activo:document.getElementById('empleadoActivo').value==='1',color:'#7C3AED'};if(!obj.nombre||!obj.apellido){showToast('Nombre y apellido requeridos','error');return;}let list=S.get('equipo')||[];if(id){const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=obj;}else list.push(obj);S.set('equipo',list);closeModal('modalEmpleado');showToast('Guardado','success');renderEquipo();}
+function saveEmpleado(){
+  const ok=_validar([
+    {id:'empleadoNombre',  test:v=>v.trim().length>0, msg:'El nombre es obligatorio'},
+    {id:'empleadoApellido',test:v=>v.trim().length>0, msg:'El apellido es obligatorio'},
+    {id:'empleadoComision',test:v=>parseInt(v)>=0&&parseInt(v)<=100, msg:'Ingresá un % entre 0 y 100'},
+  ]);
+  if(!ok)return;
+  const id=parseInt(document.getElementById('empleadoEditId').value)||null;
+  const obj={id:id||Date.now(),nombre:document.getElementById('empleadoNombre').value.trim(),apellido:document.getElementById('empleadoApellido').value.trim(),especialidad:document.getElementById('empleadoEsp').value.trim(),comision:parseInt(document.getElementById('empleadoComision').value)||40,email:document.getElementById('empleadoEmail').value.trim(),telefono:document.getElementById('empleadoTel').value.trim(),activo:document.getElementById('empleadoActivo').value==='1',color:'#7C3AED'};
+  let list=S.get('equipo')||[];if(id){const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=obj;}else list.push(obj);S.set('equipo',list);closeModal('modalEmpleado');showToast('Guardado','success');renderEquipo();
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // SERVICIOS
@@ -998,7 +1231,17 @@ function renderServicios(){const list=S.get('servicios')||[];const cont=document
 function openModalServicio(){document.getElementById('servicioEditId').value='';document.getElementById('servicioNombre').value='';document.getElementById('servicioDuracion').value='';document.getElementById('servicioPrecio').value='';document.getElementById('servicioDescripcion').value='';openModal('modalServicio');}
 function editServicio(id){const s=(S.get('servicios')||[]).find(x=>x.id===id);if(!s)return;document.getElementById('servicioEditId').value=id;document.getElementById('servicioNombre').value=s.nombre||'';document.getElementById('servicioCategoria').value=s.categoria||'Facial Avanzado';document.getElementById('servicioDuracion').value=s.duracion||'';document.getElementById('servicioPrecio').value=s.precio||'';document.getElementById('servicioDescripcion').value=s.descripcion||'';openModal('modalServicio');}
 function deleteServicio(id){if(!confirm('¿Eliminar servicio?'))return;S.set('servicios',(S.get('servicios')||[]).filter(s=>s.id!==id));renderServicios();showToast('Eliminado');}
-function saveServicio(){const id=parseInt(document.getElementById('servicioEditId').value)||null;const obj={id:id||Date.now(),nombre:document.getElementById('servicioNombre').value.trim(),categoria:document.getElementById('servicioCategoria').value,duracion:parseInt(document.getElementById('servicioDuracion').value)||0,precio:parseFloat(document.getElementById('servicioPrecio').value)||0,descripcion:document.getElementById('servicioDescripcion').value.trim()};if(!obj.nombre||!obj.duracion){showToast('Nombre y duración requeridos','error');return;}let list=S.get('servicios')||[];if(id){const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=obj;}else list.push(obj);S.set('servicios',list);closeModal('modalServicio');showToast('Servicio guardado','success');renderServicios();}
+function saveServicio(){
+  const ok=_validar([
+    {id:'servicioNombre',   test:v=>v.trim().length>0,  msg:'El nombre es obligatorio'},
+    {id:'servicioDuracion', test:v=>parseInt(v)>0,      msg:'La duración debe ser mayor a 0 minutos'},
+    {id:'servicioPrecio',   test:v=>!v||parseFloat(v)>=0, msg:'El precio no puede ser negativo'},
+  ]);
+  if(!ok)return;
+  const id=parseInt(document.getElementById('servicioEditId').value)||null;
+  const obj={id:id||Date.now(),nombre:document.getElementById('servicioNombre').value.trim(),categoria:document.getElementById('servicioCategoria').value,duracion:parseInt(document.getElementById('servicioDuracion').value)||0,precio:parseFloat(document.getElementById('servicioPrecio').value)||0,descripcion:document.getElementById('servicioDescripcion').value.trim()};
+  let list=S.get('servicios')||[];if(id){const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=obj;}else list.push(obj);S.set('servicios',list);closeModal('modalServicio');showToast('Servicio guardado','success');renderServicios();
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // PRODUCTOS
