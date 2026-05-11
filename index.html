@@ -685,24 +685,20 @@ function applyRoles() {
 async function doLogin() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value.trim();
-  const found = getUsuarios().find(x => x.user === u && x.pass === p);
-  if (!found) { document.getElementById('loginError').textContent = 'Usuario o contraseña incorrectos'; return; }
+  if (!u || !p) { document.getElementById('loginError').textContent = 'Ingresá usuario y contraseña'; return; }
 
   const btn = document.querySelector('.btn-login');
   btn.disabled = true;
+  btn.textContent = 'Verificando...';
 
-  const hasLocal = localStorage.getItem(_P + 'clientes') !== null;
-  if (hasLocal) {
-    // Dispositivo conocido: entra al instante. Supabase sincroniza en el fondo.
-    btn.textContent = 'Ingresando...';
-    setTimeout(async () => {
-      const ok = await S.pullCloud();
-      if (ok && typeof currentPage !== 'undefined') renderPage(currentPage);
-    }, 300);
-  } else {
-    // Dispositivo nuevo: bajar datos de la nube antes de mostrar
-    btn.textContent = 'Sincronizando datos...';
-    await Promise.race([S.pullCloud(), new Promise(r => setTimeout(r, 6000))]);
+  // Siempre sincronizar con la nube antes de validar, para tener los usuarios actualizados
+  await Promise.race([S.pullCloud(), new Promise(r => setTimeout(r, 5000))]);
+
+  const found = getUsuarios().find(x => x.user === u && x.pass === p);
+  if (!found) {
+    btn.textContent = 'Ingresar'; btn.disabled = false;
+    document.getElementById('loginError').textContent = 'Usuario o contraseña incorrectos';
+    return;
   }
 
   btn.textContent = 'Ingresar'; btn.disabled = false;
