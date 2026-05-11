@@ -23,7 +23,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray-50);color
 .btn-login:hover{opacity:.9}
 .login-hint{margin-top:18px;font-size:.8rem;color:var(--gray-400)}
 .login-error{color:var(--red);font-size:.85rem;margin-top:10px}
-#app{display:none;width:100%}
+#app{display:none;width:100%;min-height:100vh}
 #sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:white;border-right:1px solid var(--gray-100);display:flex;flex-direction:column;box-shadow:var(--shadow-md);z-index:100;transition:transform .3s}
 .sidebar-brand{padding:16px 16px 14px;border-bottom:1px solid var(--gray-100)}
 .sidebar-brand .brand-name{font-size:1.1rem;font-weight:700;color:var(--primary)}
@@ -41,7 +41,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray-50);color
 .sidebar-footer .user-role{font-size:.72rem;color:var(--gray-400)}
 .btn-logout{margin-left:auto;background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:1.1rem;padding:4px;border-radius:6px;transition:color .15s}
 .btn-logout:hover{color:var(--red)}
-#main{margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column}
+#main{margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column;flex:1;min-width:0;width:calc(100% - var(--sidebar-w))}
 .topbar{background:white;border-bottom:1px solid var(--gray-100);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
 .topbar-title{font-size:1.15rem;font-weight:700;color:var(--gray-800)}
 .topbar-right{display:flex;align-items:center;gap:10px}
@@ -60,8 +60,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray-50);color
 .page.active{display:block}
 #pageCalendario{display:none;flex-direction:column;height:calc(100vh - 57px)}
 #pageCalendario.active{display:flex}
-#pageCalendario .cal-top-bar{padding:10px 20px 0;flex-shrink:0}
-#pageCalendario .cal-nav{padding:0 20px 8px;flex-shrink:0}
+#pageCalendario .cal-top-bar{padding:10px 16px 0;flex-shrink:0}
+#pageCalendario .cal-nav{padding:0 16px 8px;flex-shrink:0}
 #pageCalendario #calContent{flex:1;overflow:hidden;display:flex;flex-direction:column}
 #pageCalendario .cal-tl-container{flex:1;display:flex;flex-direction:column;overflow:hidden;border-radius:0;box-shadow:none;border-top:1px solid var(--gray-100)}
 #pageCalendario .cal-week-head{flex-shrink:0}
@@ -162,12 +162,12 @@ tr:hover td{background:var(--gray-50)}
 /* Vista timeline (día y semana) */
 .cal-tl-container{background:white;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
 .cal-week-head{display:flex;border-bottom:2px solid var(--gray-200)}
-.cal-week-head-space{width:56px;flex-shrink:0;border-right:1px solid var(--gray-100)}
-.cal-week-dcol{flex:1;text-align:center;padding:8px 4px;font-size:.78rem;font-weight:700;color:var(--gray-600);border-left:1px solid var(--gray-100);line-height:1.4}
+.cal-week-head-space{width:64px;flex-shrink:0;border-right:1px solid var(--gray-100)}
+.cal-week-dcol{flex:1;text-align:center;padding:10px 4px;font-size:.85rem;font-weight:700;color:var(--gray-600);border-left:1px solid var(--gray-100);line-height:1.4}
 .cal-week-dcol.hoy{color:var(--primary);background:var(--primary-light)}
 .cal-tl-wrap{display:flex;overflow-y:auto;max-height:620px}
-.cal-axis{width:56px;flex-shrink:0;border-right:1px solid var(--gray-100)}
-.cal-axis-lbl{height:60px;display:flex;align-items:flex-start;justify-content:flex-end;padding:4px 8px 0 0;font-size:.68rem;color:var(--gray-400);font-weight:700}
+.cal-axis{width:64px;flex-shrink:0;border-right:1px solid var(--gray-100)}
+.cal-axis-lbl{height:120px;display:flex;align-items:flex-start;justify-content:flex-end;padding:6px 10px 0 0;font-size:.75rem;color:var(--gray-400);font-weight:700}
 .cal-tl-body{flex:1;position:relative}
 .cal-tl-cols{display:flex;height:100%;position:absolute;inset:0}
 .cal-tl-col{flex:1;border-left:1px solid var(--gray-100);position:relative}
@@ -175,7 +175,7 @@ tr:hover td{background:var(--gray-50)}
 .cal-hour-line.half{border-top:1px dashed #f3f3f3}
 .cal-now-line{position:absolute;left:0;right:0;border-top:2px solid var(--red);z-index:3}
 .cal-now-dot{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:var(--red)}
-.cal-evt-blk{position:absolute;left:2px;right:2px;border-radius:6px;padding:3px 6px;font-size:.72rem;font-weight:600;cursor:pointer;overflow:hidden;z-index:2;border-left:3px solid rgba(0,0,0,.15);line-height:1.3}
+.cal-evt-blk{position:absolute;left:2px;right:2px;border-radius:6px;padding:5px 8px;font-size:.78rem;font-weight:600;cursor:pointer;overflow:hidden;z-index:2;border-left:3px solid rgba(0,0,0,.15);line-height:1.35}
 .cal-evt-blk:hover{filter:brightness(.93);z-index:3}
 .cal-evt-blk.pendiente{background:#FEF3C7;color:#92400E}
 .cal-evt-blk.confirmado{background:#D1FAE5;color:#065F46}
@@ -196,7 +196,7 @@ tr:hover td{background:var(--gray-50)}
 @media(max-width:900px){
   #sidebar{transform:translateX(-100%)}
   #sidebar.open{transform:translateX(0)}
-  #main{margin-left:0}
+  #main{margin-left:0;width:100%}
   .hamburger{display:block}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .grid-2,.grid-3,.dashboard-grid{grid-template-columns:1fr}
@@ -220,7 +220,6 @@ tr:hover td{background:var(--gray-50)}
     <div class="form-group"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••••••"></div>
     <button class="btn-login" onclick="doLogin()">Ingresar</button>
     <div id="loginError" class="login-error"></div>
-    <div class="login-hint">admin / admin123 &nbsp;|&nbsp; maria / maria123 &nbsp;|&nbsp; daniela / dani123 &nbsp;|&nbsp; romina / romi123</div>
   </div>
 </div>
 
@@ -252,6 +251,8 @@ tr:hover td{background:var(--gray-50)}
     <div class="nav-item admin-only" data-page="reportes"><span class="icon">📈</span>Reportes</div>
     <div class="nav-section admin-only">Marketing</div>
     <div class="nav-item admin-only" data-page="marketing"><span class="icon">📣</span>Marketing</div>
+    <div class="nav-section admin-only">Sistema</div>
+    <div class="nav-item admin-only" data-page="config"><span class="icon">⚙️</span>Configuración</div>
   </nav>
   <div class="sidebar-footer">
     <div class="avatar-sm" id="sidebarAvatar">A</div>
@@ -386,6 +387,24 @@ tr:hover td{background:var(--gray-50)}
   <div id="campanasGrid" class="grid-3"></div>
 </div>
 
+<!-- CONFIGURACIÓN -->
+<div class="page admin-only" id="pageConfig">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">👤 Usuarios del Sistema</span>
+      <button class="btn btn-primary btn-sm" onclick="openModalUsuario()">+ Nuevo Usuario</button>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Empleado/a</th><th></th></tr></thead>
+          <tbody id="configUsuariosBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- INSUMOS -->
 <div class="page" id="pageInsumos">
   <div class="search-bar">
@@ -408,8 +427,7 @@ tr:hover td{background:var(--gray-50)}
 <div class="page" id="pageCalendario">
   <div class="cal-top-bar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
     <div class="cal-view-tabs">
-      <button class="cal-view-tab active" id="calTabDia" onclick="setCalView('dia')">Día</button>
-      <button class="cal-view-tab" id="calTabSemana" onclick="setCalView('semana')">Semana</button>
+      <button class="cal-view-tab active" id="calTabSemana" onclick="setCalView('semana')">Semana</button>
       <button class="cal-view-tab" id="calTabMes" onclick="setCalView('mes')">Mes</button>
     </div>
     <select id="calProfFiltro" class="field" style="width:190px;margin:0;font-size:.82rem" onchange="renderCalendario()"><option value="">Todas las profesionales</option></select>
@@ -457,6 +475,9 @@ tr:hover td{background:var(--gray-50)}
 <div class="modal-overlay" id="modalImport"><div class="modal"><div class="modal-header"><h3 id="importModalTitle">Importar</h3><button class="modal-close" onclick="closeModal('modalImport')">×</button></div><div class="modal-body"><p id="importModalDesc" style="margin-bottom:12px;font-size:.85rem;color:var(--gray-500)"></p><div id="importTemplate" style="background:var(--gray-100);padding:10px;border-radius:8px;font-size:.8rem;margin-bottom:14px"></div><input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="width:100%;margin-bottom:12px" onchange="previewImport(this)"><div id="importPreview" style="display:none"><p style="font-size:.85rem;font-weight:600;margin-bottom:8px">Vista previa (<span id="importCount">0</span> registros):</p><div style="max-height:200px;overflow:auto;border:1px solid var(--gray-200);border-radius:6px"><table style="font-size:.75rem"><thead id="importPreviewHead"></thead><tbody id="importPreviewBody"></tbody></table></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalImport')">Cancelar</button><button class="btn btn-primary" id="importConfirmBtn" onclick="confirmarImport()" disabled>Importar</button></div></div></div>
 
 <div class="modal-overlay" id="modalInsumo"><div class="modal"><div class="modal-header"><h3 id="modalInsumoTitle">Insumo</h3><button class="modal-close" onclick="closeModal('modalInsumo')">×</button></div><div class="modal-body"><input type="hidden" id="insumoEditId"><div class="field"><label>Nombre *</label><input type="text" id="insumoNombre" placeholder="Ej: Aguja 30G, Crema vitamina C..."></div><div class="form-row"><div class="field"><label>Categoría</label><select id="insumoCategoria"><option>Cremas y Aceites</option><option>Descartables</option><option>Agujas y Cánulas</option><option>Higiene y Desinfección</option><option>Equipamiento Menor</option><option>Otros</option></select></div><div class="field"><label>Unidad</label><select id="insumoUnidad"><option value="unidades">Unidades</option><option value="ml">ml</option><option value="gramos">gramos</option><option value="cajas">cajas</option><option value="packs">packs</option></select></div></div><div class="form-row"><div class="field"><label>Stock Actual *</label><input type="number" id="insumoCantidad" value="0" min="0"></div><div class="field"><label>Stock Mínimo</label><input type="number" id="insumoMinimo" value="0" min="0"></div></div><div class="form-row"><div class="field"><label>Proveedor</label><input type="text" id="insumoProveedor" placeholder="Nombre del proveedor"></div><div class="field"><label>Costo Unitario ($)</label><input type="number" id="insumoCosto" value="0" min="0"></div></div><div class="field"><label>Notas</label><textarea id="insumoNotas" rows="2" placeholder="Indicaciones de uso, vencimiento, etc."></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalInsumo')">Cancelar</button><button class="btn btn-primary" onclick="saveInsumo()">Guardar</button></div></div></div>
+<!-- MODAL USUARIO -->
+<div class="modal-overlay" id="modalUsuario"><div class="modal"><div class="modal-header"><h3 id="modalUsuarioTitle">Nuevo Usuario</h3><button class="modal-close" onclick="closeModal('modalUsuario')">×</button></div><div class="modal-body"><input type="hidden" id="usuarioEditId"><div class="form-row"><div class="field"><label>Nombre completo *</label><input type="text" id="usuarioNombre" placeholder="Ej: María González" autocomplete="off"></div><div class="field"><label>Nombre de usuario *</label><input type="text" id="usuarioUser" placeholder="Ej: maria" autocomplete="off"></div></div><div class="form-row"><div class="field"><label>Contraseña</label><input type="password" id="usuarioPass" autocomplete="new-password" placeholder="Dejar vacío para no cambiar"></div><div class="field"><label>Confirmar contraseña</label><input type="password" id="usuarioPass2" placeholder="Repetir contraseña"></div></div><div class="form-row"><div class="field"><label>Rol *</label><select id="usuarioRol" onchange="toggleUsuarioEmpleado()"><option value="profesional">Profesional</option><option value="admin">Administrador</option></select></div><div class="field" id="usuarioEmpleadoWrap"><label>Empleado/a asociado/a</label><select id="usuarioEmpleado"><option value="">Sin asociar</option></select></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalUsuario')">Cancelar</button><button class="btn btn-primary" onclick="saveUsuario()">Guardar</button></div></div></div>
+
 <!-- MODAL HISTORIAL CLIENTE -->
 <div class="modal-overlay" id="modalHistorialCliente">
   <div class="modal" style="width:640px">
@@ -542,12 +563,19 @@ const S = {
 // ═══════════════════════════════════════════════════════════════════════
 // USUARIOS
 // ═══════════════════════════════════════════════════════════════════════
-const USERS = [
-  { user:'admin',   pass:'admin123', name:'Administrador',  role:'admin' },
-  { user:'maria',   pass:'maria123', name:'María Suárez',   role:'profesional', empleadoId:1 },
-  { user:'daniela', pass:'dani123',  name:'Daniela Castro', role:'profesional', empleadoId:2 },
-  { user:'romina',  pass:'romi123',  name:'Romina Vega',    role:'profesional', empleadoId:3 },
-];
+function getUsuarios() {
+  let u = S.get('usuarios');
+  if (!u || !u.length) {
+    u = [
+      {id:'u1',user:'admin',   pass:'admin123',name:'Administrador', role:'admin'},
+      {id:'u2',user:'maria',   pass:'maria123',name:'María Suárez',  role:'profesional',empleadoId:1},
+      {id:'u3',user:'daniela', pass:'dani123', name:'Daniela Castro',role:'profesional',empleadoId:2},
+      {id:'u4',user:'romina',  pass:'romi123', name:'Romina Vega',   role:'profesional',empleadoId:3},
+    ];
+    S.set('usuarios', u);
+  }
+  return u;
+}
 let CU = null, currentPage = 'dashboard';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -593,10 +621,11 @@ const PAGE_CFG = {
   calendario: { title:'Calendario',  action:'+ Nuevo Turno',    fn:'openModalTurno' },
   gabinete:   { title:'Gabinete',    action:'+ Nuevo Turno',    fn:'openModalTurno' },
   insumos:    { title:'Insumos',     action:'+ Nuevo Insumo',   fn:'openModalInsumo' },
+  config:     { title:'Configuración', action:'',               fn:'noop' },
 };
 
 function goTo(page) {
-  if (CU && CU.role !== 'admin' && ['equipo','caja','gastos','stock','reportes','marketing'].includes(page)) {
+  if (CU && CU.role !== 'admin' && page !== 'calendario') {
     showToast('Sin acceso', 'error'); return;
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -624,7 +653,8 @@ function goTo(page) {
     equipo:renderEquipo, servicios:renderServicios, productos:renderProductos,
     combos:renderCombos, caja:renderCaja, gastos:renderGastos, stock:renderStock,
     reportes:renderReportes, marketing:renderMarketing,
-    calendario:renderCalendario, gabinete:renderGabinete, insumos:renderInsumos
+    calendario:renderCalendario, gabinete:renderGabinete, insumos:renderInsumos,
+    config:renderConfig
   };
   if (renderMap[page]) renderMap[page]();
 }
@@ -636,6 +666,17 @@ function topbarActionFn() {
 function applyRoles() {
   const isAdmin = CU && CU.role === 'admin';
   document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  // Profesional: solo puede ver el calendario
+  document.querySelectorAll('.nav-item:not(.admin-only)').forEach(el => {
+    if (!isAdmin) {
+      el.style.display = (el.dataset.page === 'calendario') ? '' : 'none';
+    } else {
+      el.style.display = '';
+    }
+  });
+  document.querySelectorAll('.nav-section:not(.admin-only)').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -644,7 +685,7 @@ function applyRoles() {
 async function doLogin() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value.trim();
-  const found = USERS.find(x => x.user === u && x.pass === p);
+  const found = getUsuarios().find(x => x.user === u && x.pass === p);
   if (!found) { document.getElementById('loginError').textContent = 'Usuario o contraseña incorrectos'; return; }
 
   const btn = document.querySelector('.btn-login');
@@ -699,7 +740,7 @@ setInterval(async () => {
 }, 60000);
 
 function renderPage(p) {
-  const m = { dashboard:renderDashboard, turnos:renderTurnos, clientes:renderClientes, equipo:renderEquipo, servicios:renderServicios, productos:renderProductos, combos:renderCombos, caja:renderCaja, gastos:renderGastos, stock:renderStock, reportes:renderReportes, marketing:renderMarketing, calendario:renderCalendario, gabinete:renderGabinete, insumos:renderInsumos };
+  const m = { dashboard:renderDashboard, turnos:renderTurnos, clientes:renderClientes, equipo:renderEquipo, servicios:renderServicios, productos:renderProductos, combos:renderCombos, caja:renderCaja, gastos:renderGastos, stock:renderStock, reportes:renderReportes, marketing:renderMarketing, calendario:renderCalendario, gabinete:renderGabinete, insumos:renderInsumos, config:renderConfig };
   if (m[p]) m[p]();
 }
 
@@ -708,12 +749,12 @@ function renderPage(p) {
 // ═══════════════════════════════════════════════════════════════════════
 function initApp() {
   if (!S.get('clientes')) initSampleData();
-  // Servicios siempre presentes
   if (!S.get('servicios') || (S.get('servicios')||[]).length < 21) seedServicios();
+  getUsuarios(); // inicializar usuarios por defecto si no existen
   document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('dAnio').textContent = new Date().getFullYear();
   checkStockAlerts();
-  goTo('dashboard');
+  goTo(CU && CU.role !== 'admin' ? 'calendario' : 'dashboard');
 }
 
 function seedServicios() {
@@ -1410,10 +1451,10 @@ function saveInsumo(){
 // ═══════════════════════════════════════════════════════════════════════
 // CALENDARIO — vistas Día / Semana / Mes
 // ═══════════════════════════════════════════════════════════════════════
-let _calView='dia';
+let _calView='semana';
 let _calRef=new Date(); // fecha de referencia
 
-const CAL_HORA_INI=8, CAL_HORA_FIN=21, CAL_PX_MIN=1.5; // 1.5px por minuto
+const CAL_HORA_INI=8, CAL_HORA_FIN=21, CAL_PX_MIN=2; // 2px por minuto → bloques más grandes
 function calPx(min){ return min*CAL_PX_MIN; }
 function calTop(hora){ const [h,m]=(hora||'08:00').split(':').map(Number); return calPx((h*60+m)-(CAL_HORA_INI*60)); }
 function calH(min){ return calPx(min||60); }
@@ -1421,7 +1462,7 @@ const CAL_TOTAL_H=calPx((CAL_HORA_FIN-CAL_HORA_INI)*60);
 
 function setCalView(v){
   _calView=v;
-  ['dia','semana','mes'].forEach(x=>{
+  ['semana','mes'].forEach(x=>{
     const el=document.getElementById('calTab'+x.charAt(0).toUpperCase()+x.slice(1));
     if(el)el.classList.toggle('active',x===v);
   });
@@ -1429,22 +1470,19 @@ function setCalView(v){
 }
 function calHoy(){ _calRef=new Date(); renderCalendario(); }
 function calNavPrev(){
-  if(_calView==='dia') _calRef=new Date(_calRef.getTime()-86400000);
-  else if(_calView==='semana') _calRef=new Date(_calRef.getTime()-7*86400000);
-  else { _calRef.setMonth(_calRef.getMonth()-1); }
+  if(_calView==='semana') _calRef=new Date(_calRef.getTime()-7*86400000);
+  else { _calRef.setMonth(_calRef.getMonth()-1); _calRef=new Date(_calRef); }
   renderCalendario();
 }
 function calNavNext(){
-  if(_calView==='dia') _calRef=new Date(_calRef.getTime()+86400000);
-  else if(_calView==='semana') _calRef=new Date(_calRef.getTime()+7*86400000);
-  else { _calRef.setMonth(_calRef.getMonth()+1); }
+  if(_calView==='semana') _calRef=new Date(_calRef.getTime()+7*86400000);
+  else { _calRef.setMonth(_calRef.getMonth()+1); _calRef=new Date(_calRef); }
   renderCalendario();
 }
 function renderCalendario(){
   _actualizarFiltroProf();
   if(_calView==='mes') _calMes();
-  else if(_calView==='semana') _calSemana();
-  else _calDia();
+  else _calSemana();
 }
 function _actualizarFiltroProf(){
   const sel=document.getElementById('calProfFiltro'); if(!sel)return;
@@ -1579,9 +1617,10 @@ function _timelineHTML(cols){
     const profNombre=prof?prof.nombre:'';
     const horaFin=_addMins(t.hora||'08:00',dur);
     return '<div class="cal-evt-blk '+_evtColor(t.estado)+'" style="top:'+top+'px;height:'+h+'px;'+extraStyle+'" onclick="editTurno('+t.id+')" title="'+nombre+' – '+svNombre+'">'
-      +'<div style="font-size:.65rem">'+(t.hora||'').slice(0,5)+' – '+horaFin+'</div>'
-      +'<div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem">'+nombre+'</div>'
-      +(svNombre&&h>38?'<div style="opacity:.8;font-size:.63rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+svNombre+(profNombre?' · '+profNombre:'')+'</div>':'')
+      +'<div style="font-size:.7rem;opacity:.85">'+(t.hora||'').slice(0,5)+' – '+horaFin+'</div>'
+      +'<div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8rem;margin-top:1px">'+nombre+'</div>'
+      +(svNombre&&h>45?'<div style="opacity:.8;font-size:.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">'+svNombre+'</div>':'')
+      +(profNombre&&h>70?'<div style="opacity:.65;font-size:.65rem;margin-top:1px">'+profNombre+'</div>':'')
       +'</div>';
   }
 
@@ -1703,6 +1742,115 @@ function renderGabinete(){
       +'</div><div class="gabinete-body">'+slotsNA+'</div></div>';
   }
   grid.innerHTML=dashboard+cardsHtml;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CONFIGURACIÓN – USUARIOS
+// ═══════════════════════════════════════════════════════════════════════
+function renderConfig() {
+  const users = getUsuarios();
+  const equipo = S.get('equipo') || [];
+  const adminsCount = users.filter(u => u.role === 'admin').length;
+  document.getElementById('configUsuariosBody').innerHTML = users.map(u => {
+    const emp = u.empleadoId ? (equipo.find(e => String(e.id) === String(u.empleadoId)) || {}) : {};
+    const empNombre = emp.nombre ? (emp.nombre + ' ' + (emp.apellido||'')).trim() : '–';
+    const canDel = !(u.role === 'admin' && adminsCount <= 1);
+    return '<tr>'
+      +'<td><strong>'+u.name+'</strong></td>'
+      +'<td><code style="background:var(--gray-100);padding:2px 6px;border-radius:4px;font-size:.85rem">'+u.user+'</code></td>'
+      +'<td><span class="badge '+(u.role==='admin'?'badge-purple':'badge-blue')+'">'+(u.role==='admin'?'Administrador':'Profesional')+'</span></td>'
+      +'<td>'+empNombre+'</td>'
+      +'<td style="white-space:nowrap">'
+        +'<button class="btn btn-secondary btn-sm" onclick="editUsuario(\''+u.id+'\')">Editar</button>'
+        +(canDel?'<button class="btn btn-danger btn-sm" style="margin-left:6px" onclick="deleteUsuario(\''+u.id+'\')">Eliminar</button>':'')
+      +'</td>'
+    +'</tr>';
+  }).join('');
+}
+
+function openModalUsuario() {
+  document.getElementById('modalUsuarioTitle').textContent = 'Nuevo Usuario';
+  document.getElementById('usuarioEditId').value = '';
+  document.getElementById('usuarioNombre').value = '';
+  document.getElementById('usuarioUser').value = '';
+  document.getElementById('usuarioPass').value = '';
+  document.getElementById('usuarioPass2').value = '';
+  document.getElementById('usuarioRol').value = 'profesional';
+  _poblarSelectEmpleados('');
+  toggleUsuarioEmpleado();
+  openModal('modalUsuario');
+}
+
+function editUsuario(id) {
+  const u = getUsuarios().find(x => x.id === id);
+  if (!u) return;
+  document.getElementById('modalUsuarioTitle').textContent = 'Editar Usuario';
+  document.getElementById('usuarioEditId').value = u.id;
+  document.getElementById('usuarioNombre').value = u.name;
+  document.getElementById('usuarioUser').value = u.user;
+  document.getElementById('usuarioPass').value = '';
+  document.getElementById('usuarioPass2').value = '';
+  document.getElementById('usuarioRol').value = u.role;
+  _poblarSelectEmpleados(u.empleadoId || '');
+  toggleUsuarioEmpleado();
+  openModal('modalUsuario');
+}
+
+function _poblarSelectEmpleados(selectedId) {
+  const equipo = (S.get('equipo')||[]).filter(e => e.activo != 0);
+  const sel = document.getElementById('usuarioEmpleado');
+  sel.innerHTML = '<option value="">Sin asociar</option>'
+    + equipo.map(e => '<option value="'+e.id+'"'+(String(e.id)===String(selectedId)?' selected':'')+'>'+e.nombre+' '+(e.apellido||'')+'</option>').join('');
+}
+
+function toggleUsuarioEmpleado() {
+  const isProfesional = document.getElementById('usuarioRol').value === 'profesional';
+  document.getElementById('usuarioEmpleadoWrap').style.display = isProfesional ? '' : 'none';
+}
+
+function saveUsuario() {
+  const id = document.getElementById('usuarioEditId').value;
+  const name = document.getElementById('usuarioNombre').value.trim();
+  const user = document.getElementById('usuarioUser').value.trim().toLowerCase();
+  const pass = document.getElementById('usuarioPass').value;
+  const pass2 = document.getElementById('usuarioPass2').value;
+  const role = document.getElementById('usuarioRol').value;
+  const empleadoId = document.getElementById('usuarioEmpleado').value || null;
+
+  if (!name || !user) { showToast('Nombre y usuario son obligatorios', 'error'); return; }
+  if (!id && !pass) { showToast('La contraseña es obligatoria para nuevos usuarios', 'error'); return; }
+  if (pass && pass !== pass2) { showToast('Las contraseñas no coinciden', 'error'); return; }
+  if (pass && pass.length < 4) { showToast('La contraseña debe tener al menos 4 caracteres', 'error'); return; }
+
+  const users = getUsuarios();
+  if (users.find(u => u.user === user && u.id !== id)) { showToast('Ya existe un usuario con ese nombre de usuario', 'error'); return; }
+
+  if (id) {
+    const idx = users.findIndex(u => u.id === id);
+    if (idx >= 0) {
+      users[idx] = Object.assign({}, users[idx], { name, user, role, empleadoId: role==='profesional'?empleadoId:null });
+      if (pass) users[idx].pass = pass;
+    }
+  } else {
+    users.push({ id:'u'+Date.now(), user, pass, name, role, empleadoId: role==='profesional'?empleadoId:null });
+  }
+  S.set('usuarios', users);
+  closeModal('modalUsuario');
+  renderConfig();
+  showToast(id ? 'Usuario actualizado' : 'Usuario creado');
+}
+
+function deleteUsuario(id) {
+  const users = getUsuarios();
+  const u = users.find(x => x.id === id);
+  if (!u) return;
+  if (u.role === 'admin' && users.filter(x => x.role === 'admin').length <= 1) {
+    showToast('Debe haber al menos un administrador', 'error'); return;
+  }
+  if (!confirm('¿Eliminar el usuario "'+u.name+'"? Esta acción no se puede deshacer.')) return;
+  S.set('usuarios', users.filter(x => x.id !== id));
+  renderConfig();
+  showToast('Usuario eliminado');
 }
 </script>
 </body>
