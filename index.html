@@ -236,12 +236,13 @@ tr:hover td{background:var(--gray-50)}
     <div class="nav-item" data-page="dashboard"><span class="icon">📊</span>Dashboard</div>
     <div class="nav-item" data-page="calendario"><span class="icon">🗓️</span>Calendario</div>
     <div class="nav-item" data-page="turnos"><span class="icon">📅</span>Turnos</div>
+    <div class="nav-item" data-page="ventas"><span class="icon">🛍️</span>Ventas</div>
     <div class="nav-item" data-page="gabinete"><span class="icon">🛋️</span>Gabinete</div>
     <div class="nav-section">Gestión</div>
     <div class="nav-item" data-page="clientes"><span class="icon">👥</span>Clientes</div>
     <div class="nav-item admin-only" data-page="equipo"><span class="icon">💼</span>Equipo</div>
     <div class="nav-item" data-page="servicios"><span class="icon">✨</span>Servicios</div>
-    <div class="nav-item" data-page="productos"><span class="icon">🛍️</span>Productos</div>
+    <div class="nav-item" data-page="productos"><span class="icon">📦</span>Productos</div>
     <div class="nav-item" data-page="combos"><span class="icon">🎁</span>Combos</div>
     <div class="nav-section admin-only">Finanzas</div>
     <div class="nav-item admin-only" data-page="finanzas"><span class="icon">💰</span>Finanzas</div>
@@ -279,6 +280,13 @@ tr:hover td{background:var(--gray-50)}
     <div class="stat-card"><div class="stat-icon" style="background:var(--pink-light)">👥</div><div class="stat-info"><div class="stat-label">Clientes</div><div class="stat-value" id="dClientes">0</div></div></div>
     <div class="stat-card admin-only"><div class="stat-icon" style="background:var(--orange-light)">💸</div><div class="stat-info"><div class="stat-label">Gastos del Mes</div><div class="stat-value" id="dGastos">$0</div></div></div>
   </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-header">
+      <span class="card-title">🗓️ Semana Actual — Turnos por Gabinete</span>
+      <span id="dashSemanaLabel" style="font-size:.78rem;color:var(--gray-400)"></span>
+    </div>
+    <div id="dashCalSemana" style="overflow:hidden;border-radius:0 0 var(--radius) var(--radius)"></div>
+  </div>
   <div class="dashboard-grid">
     <div class="card"><div class="card-header"><span class="card-title">📈 Ingresos Mensuales</span><span id="dAnio" style="font-size:.78rem;color:var(--gray-400)"></span></div><div class="card-body"><div class="chart-container"><canvas id="chartIngresos"></canvas></div></div></div>
     <div class="card"><div class="card-header"><span class="card-title">📅 Turnos de Hoy</span></div><div class="card-body"><div class="today-list" id="todayList"><div class="empty-state"><div class="empty-icon">📭</div><p>No hay turnos hoy</p></div></div></div></div>
@@ -286,13 +294,6 @@ tr:hover td{background:var(--gray-50)}
   <div class="grid-2" style="margin-bottom:14px">
     <div class="card"><div class="card-header"><span class="card-title">🎂 Cumpleaños del Mes</span></div><div class="card-body" id="dashCumples"></div></div>
     <div class="card admin-only"><div class="card-header"><span class="card-title">💼 Equipo</span></div><div class="card-body" id="dashEquipo"></div></div>
-  </div>
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">🗓️ Semana Actual — Turnos por Gabinete</span>
-      <span id="dashSemanaLabel" style="font-size:.78rem;color:var(--gray-400)"></span>
-    </div>
-    <div id="dashCalSemana" style="overflow:hidden;border-radius:0 0 var(--radius) var(--radius)"></div>
   </div>
 </div>
 
@@ -304,6 +305,16 @@ tr:hover td{background:var(--gray-50)}
     <input type="date" id="turnosFechaFilter" class="field" style="width:160px;margin:0" onchange="renderTurnos()">
   </div>
   <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Fecha / Hora</th><th>Cliente</th><th>Servicio</th><th>Profesional</th><th>Precio</th><th>Estado</th><th>Cobro</th><th></th></tr></thead><tbody id="turnosTbody"></tbody></table></div></div></div>
+</div>
+
+<!-- VENTAS DE PRODUCTOS / COMBOS -->
+<div class="page" id="pageVentas">
+  <div class="search-bar">
+    <input class="search-input" type="text" placeholder="Buscar por cliente o producto..." id="ventasSearch" oninput="renderVentas()">
+    <input type="month" id="ventasMesFiltro" class="field" style="width:160px;margin:0" onchange="renderVentas()">
+    <button class="btn btn-primary" onclick="openModalVentaProd(null)">+ Nueva Venta</button>
+  </div>
+  <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Turno</th><th>Productos / Combos</th><th>Total</th><th>Método</th><th></th></tr></thead><tbody id="ventasProdTbody"></tbody></table></div></div></div>
 </div>
 
 <!-- CLIENTES -->
@@ -519,6 +530,43 @@ tr:hover td{background:var(--gray-50)}
 <div class="modal-overlay" id="modalImport"><div class="modal"><div class="modal-header"><h3 id="importModalTitle">Importar</h3><button class="modal-close" onclick="closeModal('modalImport')">×</button></div><div class="modal-body"><p id="importModalDesc" style="margin-bottom:12px;font-size:.85rem;color:var(--gray-500)"></p><div id="importTemplate" style="background:var(--gray-100);padding:10px;border-radius:8px;font-size:.8rem;margin-bottom:14px"></div><input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="width:100%;margin-bottom:12px" onchange="previewImport(this)"><div id="importPreview" style="display:none"><p style="font-size:.85rem;font-weight:600;margin-bottom:8px">Vista previa (<span id="importCount">0</span> registros):</p><div style="max-height:200px;overflow:auto;border:1px solid var(--gray-200);border-radius:6px"><table style="font-size:.75rem"><thead id="importPreviewHead"></thead><tbody id="importPreviewBody"></tbody></table></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalImport')">Cancelar</button><button class="btn btn-primary" id="importConfirmBtn" onclick="confirmarImport()" disabled>Importar</button></div></div></div>
 
 <div class="modal-overlay" id="modalInsumo"><div class="modal"><div class="modal-header"><h3 id="modalInsumoTitle">Insumo</h3><button class="modal-close" onclick="closeModal('modalInsumo')">×</button></div><div class="modal-body"><input type="hidden" id="insumoEditId"><div class="field"><label>Nombre *</label><input type="text" id="insumoNombre" placeholder="Ej: Aguja 30G, Crema vitamina C..."></div><div class="form-row"><div class="field"><label>Categoría</label><select id="insumoCategoria"><option>Cremas y Aceites</option><option>Descartables</option><option>Agujas y Cánulas</option><option>Higiene y Desinfección</option><option>Equipamiento Menor</option><option>Otros</option></select></div><div class="field"><label>Unidad</label><select id="insumoUnidad"><option value="unidades">Unidades</option><option value="ml">ml</option><option value="gramos">gramos</option><option value="cajas">cajas</option><option value="packs">packs</option></select></div></div><div class="form-row"><div class="field"><label>Stock Actual *</label><input type="number" id="insumoCantidad" value="0" min="0"></div><div class="field"><label>Stock Mínimo</label><input type="number" id="insumoMinimo" value="0" min="0"></div></div><div class="form-row"><div class="field"><label>Proveedor</label><input type="text" id="insumoProveedor" placeholder="Nombre del proveedor"></div><div class="field"><label>Costo Unitario ($)</label><input type="number" id="insumoCosto" value="0" min="0"></div></div><div class="field"><label>Notas</label><textarea id="insumoNotas" rows="2" placeholder="Indicaciones de uso, vencimiento, etc."></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalInsumo')">Cancelar</button><button class="btn btn-primary" onclick="saveInsumo()">Guardar</button></div></div></div>
+<!-- MODAL VENTA DE PRODUCTOS -->
+<div class="modal-overlay" id="modalVentaProd">
+  <div class="modal" style="width:580px">
+    <div class="modal-header"><h3 id="modalVentaProdTitle">Nueva Venta</h3><button class="modal-close" onclick="closeModal('modalVentaProd')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="vpEditId">
+      <input type="hidden" id="vpTurnoId">
+      <div id="vpTurnoInfo" style="display:none;margin-bottom:12px;padding:10px 14px;background:var(--primary-light);border-radius:8px;font-size:.85rem;color:var(--primary-dark)"></div>
+      <div class="form-row">
+        <div class="field"><label>Fecha</label><input type="date" id="vpFecha"></div>
+        <div class="field"><label>Cliente</label><select id="vpCliente"></select></div>
+      </div>
+      <!-- picker de ítems -->
+      <div style="background:var(--gray-50);border-radius:8px;padding:12px;margin-bottom:12px">
+        <div style="font-size:.8rem;font-weight:700;color:var(--gray-600);margin-bottom:8px">Agregar ítem</div>
+        <div class="form-row" style="margin-bottom:8px">
+          <div class="field"><label>Tipo</label><select id="vpPickerTipo" onchange="vpLoadItems()"><option value="producto">Producto</option><option value="combo">Combo</option></select></div>
+          <div class="field"><label>Ítem</label><select id="vpPickerItem" onchange="vpItemChange()"></select></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Cantidad</label><input type="number" id="vpPickerCant" value="1" min="1"></div>
+          <div class="field"><label>Precio Unit. ($)</label><input type="number" id="vpPickerPrecio" value="0" min="0"></div>
+          <div class="field" style="display:flex;align-items:flex-end"><button class="btn btn-secondary btn-sm" onclick="vpAddItem()" style="width:100%">+ Agregar</button></div>
+        </div>
+      </div>
+      <div id="vpItemsList" style="margin-bottom:12px"></div>
+      <div class="form-row">
+        <div class="field"><label>Método de pago</label><select id="vpMetodo"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="mercadopago">MercadoPago</option></select></div>
+        <div class="field"><label>Notas</label><input type="text" id="vpNotas" placeholder="Opcional"></div>
+      </div>
+      <div style="background:var(--green-light);border-radius:8px;padding:10px 14px;text-align:right;font-weight:700;font-size:1rem;color:#065F46">
+        Total: <span id="vpTotal">$0</span>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalVentaProd')">Cancelar</button><button class="btn btn-primary" onclick="saveVentaProd()">Guardar venta</button></div>
+  </div>
+</div>
 <!-- MODAL COMPRA -->
 <div class="modal-overlay" id="modalCompra"><div class="modal"><div class="modal-header"><h3 id="modalCompraTitle">Nueva Compra</h3><button class="modal-close" onclick="closeModal('modalCompra')">×</button></div><div class="modal-body"><input type="hidden" id="compraEditId"><div class="form-row"><div class="field"><label>Fecha</label><input type="date" id="compraFecha"></div><div class="field"><label>Tipo</label><select id="compraTipo" onchange="loadCompraItems()"><option value="producto">Producto</option><option value="insumo">Insumo</option></select></div></div><div class="field"><label>Ítem *</label><select id="compraItem"></select></div><div class="form-row"><div class="field"><label>Cantidad *</label><input type="number" id="compraCantidad" value="1" min="1"></div><div class="field"><label>Costo Unitario ($)</label><input type="number" id="compraCosto" value="0" min="0"></div></div><div class="field"><label>Proveedor</label><input type="text" id="compraProveedor" placeholder="Nombre del proveedor"></div><div class="field"><label>Notas</label><textarea id="compraNotas" rows="2"></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalCompra')">Cancelar</button><button class="btn btn-primary" onclick="saveCompra()">Guardar y actualizar stock</button></div></div></div>
 <!-- MODAL USUARIO -->
@@ -839,7 +887,7 @@ setInterval(async () => {
 }, 60000);
 
 function renderPage(p) {
-  const m = { dashboard:renderDashboard, turnos:renderTurnos, clientes:renderClientes, equipo:renderEquipo, servicios:renderServicios, productos:renderProductos, combos:renderCombos, caja:renderCaja, gastos:renderGastos, stock:renderStock, reportes:renderReportes, marketing:renderMarketing, calendario:renderCalendario, gabinete:renderGabinete, insumos:renderInsumos, config:renderConfig };
+  const m = { dashboard:renderDashboard, turnos:renderTurnos, ventas:renderVentas, clientes:renderClientes, equipo:renderEquipo, servicios:renderServicios, productos:renderProductos, combos:renderCombos, caja:renderCaja, gastos:renderGastos, stock:renderStock, reportes:renderReportes, marketing:renderMarketing, calendario:renderCalendario, gabinete:renderGabinete, insumos:renderInsumos, config:renderConfig };
   if (m[p]) m[p]();
 }
 
@@ -905,6 +953,7 @@ function initSampleData() {
     {id:2,clienteId:2,empleadoId:2,servicioId:13,fecha:hoy,hora:'14:00',estado:'pendiente',metodoPago:'',notas:'',precio:55000},
   ]);
   S.set('ventas', []);
+  S.set('ventas_prod', []);
   S.set('compras', []);
 }
 
@@ -1037,11 +1086,14 @@ function renderTurnos() {
   if(ff) list=list.filter(t=>t.fecha===ff);
   if(q) list=list.filter(t=>{const c=getCliente(t.clienteId);return (c.nombre+' '+c.apellido).toLowerCase().includes(q);});
   const tbody=document.getElementById('turnosTbody');
-  if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📭</div><p>Sin turnos</p></div></td></tr>';return;}
+  if(!list.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📭</div><p>Sin turnos</p></div></td></tr>';return;}
   tbody.innerHTML=list.map(t=>{
     const c=getCliente(t.clienteId),s=getServicio(t.servicioId),e=getEmpleado(t.empleadoId);
-    const cobrarBtn=t.estado!=='cancelado'?'<button class="action-btn" onclick="cobrarTurno('+t.id+')" title="Cobrar">💰</button>':'';
-    return '<tr><td><strong>'+fmtDate(t.fecha)+'</strong><br><small>'+t.hora+'</small></td><td>'+c.nombre+' '+c.apellido+'</td><td>'+s.nombre+'</td><td>'+(e.nombre||'–')+' '+(e.apellido||'')+'</td><td>'+fmt(t.precio)+'</td><td>'+badgeEstado(t.estado)+'</td><td>'+_badgeCobro(t.id)+'</td><td><button class="action-btn" onclick="editTurno('+t.id+')">✏️</button>'+cobrarBtn+'<button class="action-btn" onclick="deleteTurno('+t.id+')">🗑️</button></td></tr>';
+    const cobrarBtn=t.estado!=='cancelado'?'<button class="action-btn" onclick="cobrarTurno('+t.id+')" title="Cobrar servicio">💰</button>':'';
+    const ventasProdTurno=(S.get('ventas_prod')||[]).filter(v=>v.turnoId===t.id);
+    const prodBtn=t.estado!=='cancelado'?'<button class="action-btn" onclick="openModalVentaProd('+t.id+')" title="Vender productos/combos">🛍️</button>':'';
+    const prodBadge=ventasProdTurno.length?'<span class="badge badge-purple" style="font-size:.65rem;margin-left:4px">+'+ventasProdTurno.length+' prod.</span>':'';
+    return '<tr><td><strong>'+fmtDate(t.fecha)+'</strong><br><small>'+t.hora+'</small></td><td>'+c.nombre+' '+c.apellido+'</td><td>'+s.nombre+'</td><td>'+(e.nombre||'–')+' '+(e.apellido||'')+'</td><td>'+fmt(t.precio)+'</td><td>'+badgeEstado(t.estado)+'</td><td>'+_badgeCobro(t.id)+prodBadge+'</td><td><button class="action-btn" onclick="editTurno('+t.id+')">✏️</button>'+cobrarBtn+prodBtn+'<button class="action-btn" onclick="deleteTurno('+t.id+')">🗑️</button></td></tr>';
   }).join('');
 }
 function openModalTurno(fecha, gabinete) {
@@ -1476,7 +1528,130 @@ function deleteGasto(id){if(!confirm('¿Eliminar?'))return;S.set('gastos',(S.get
 function saveGasto(){const desc=document.getElementById('gastoDescripcion').value.trim();const monto=parseFloat(document.getElementById('gastoMonto').value)||0;if(!desc||!monto){showToast('Complete descripción y monto','error');return;}const list=S.get('gastos')||[];list.push({id:Date.now(),fecha:document.getElementById('gastoFecha').value,categoria:document.getElementById('gastoCategoria').value,descripcion:desc,monto,metodoPago:document.getElementById('gastoMetodo').value});S.set('gastos',list);closeModal('modalGasto');showToast('Gasto guardado','success');renderGastos();if(document.getElementById('pageFinanzas')?.classList.contains('active'))renderEgresosTab();}
 
 // ═══════════════════════════════════════════════════════════════════════
-// VENTAS
+// VENTAS DE PRODUCTOS / COMBOS
+// ═══════════════════════════════════════════════════════════════════════
+let _vpItems=[];
+function _vpTotal(){return _vpItems.reduce((a,i)=>a+(i.precio||0)*(i.cantidad||1),0);}
+function _vpRefreshTotal(){const el=document.getElementById('vpTotal');if(el)el.textContent=fmt(_vpTotal());}
+function _vpRefreshList(){
+  const el=document.getElementById('vpItemsList');if(!el)return;
+  if(!_vpItems.length){el.innerHTML='<p style="font-size:.82rem;color:var(--gray-400);text-align:center;padding:8px">Sin ítems</p>';_vpRefreshTotal();return;}
+  el.innerHTML='<table style="width:100%;font-size:.85rem;margin-bottom:4px"><thead><tr><th style="padding:4px 8px;text-align:left">Ítem</th><th style="padding:4px 8px;text-align:right">Cant.</th><th style="padding:4px 8px;text-align:right">Precio</th><th style="padding:4px 8px;text-align:right">Subtotal</th><th style="padding:4px 2px"></th></tr></thead><tbody>'+
+    _vpItems.map((it,i)=>'<tr><td style="padding:4px 8px">'+it.nombre+'<br><small style="color:var(--gray-400)">'+it.tipo+'</small></td><td style="padding:4px 8px;text-align:right">'+it.cantidad+'</td><td style="padding:4px 8px;text-align:right">'+fmt(it.precio)+'</td><td style="padding:4px 8px;text-align:right"><strong>'+fmt(it.precio*it.cantidad)+'</strong></td><td style="padding:4px 2px;text-align:right"><button class="action-btn" onclick="vpRemoveItem('+i+')">✕</button></td></tr>').join('')+
+  '</tbody></table>';
+  _vpRefreshTotal();
+}
+function vpLoadItems(){
+  const tipo=document.getElementById('vpPickerTipo').value;
+  const list=tipo==='producto'?(S.get('productos')||[]):(S.get('combos')||[]);
+  const sel=document.getElementById('vpPickerItem');
+  sel.innerHTML=list.length?list.map(i=>'<option value="'+i.id+'">'+i.nombre+'</option>').join(''):'<option value="">Sin ítems</option>';
+  vpItemChange();
+}
+function vpItemChange(){
+  const tipo=document.getElementById('vpPickerTipo').value;
+  const itemId=parseInt(document.getElementById('vpPickerItem').value)||0;
+  const list=tipo==='producto'?(S.get('productos')||[]):(S.get('combos')||[]);
+  const item=list.find(i=>i.id===itemId);
+  if(item)document.getElementById('vpPickerPrecio').value=item.precio||0;
+}
+function vpAddItem(){
+  const tipo=document.getElementById('vpPickerTipo').value;
+  const itemId=parseInt(document.getElementById('vpPickerItem').value)||0;
+  const cantidad=parseInt(document.getElementById('vpPickerCant').value)||1;
+  const precio=parseFloat(document.getElementById('vpPickerPrecio').value)||0;
+  if(!itemId){showToast('Seleccioná un ítem','error');return;}
+  const list=tipo==='producto'?(S.get('productos')||[]):(S.get('combos')||[]);
+  const item=list.find(i=>i.id===itemId);
+  if(!item)return;
+  const existing=_vpItems.findIndex(x=>x.itemId===itemId&&x.tipo===tipo);
+  if(existing>=0){_vpItems[existing].cantidad+=cantidad;}
+  else{_vpItems.push({itemId,tipo,nombre:item.nombre,cantidad,precio});}
+  document.getElementById('vpPickerCant').value='1';
+  _vpRefreshList();
+}
+function vpRemoveItem(i){_vpItems.splice(i,1);_vpRefreshList();}
+function openModalVentaProd(turnoId){
+  _vpItems=[];
+  document.getElementById('vpEditId').value='';
+  document.getElementById('vpTurnoId').value=turnoId||'';
+  document.getElementById('vpFecha').value=new Date().toISOString().split('T')[0];
+  document.getElementById('vpMetodo').value='efectivo';
+  document.getElementById('vpNotas').value='';
+  // poblar clientes
+  const clientes=S.get('clientes')||[];
+  const csel=document.getElementById('vpCliente');
+  csel.innerHTML=clientes.map(c=>'<option value="'+c.id+'">'+c.nombre+' '+c.apellido+'</option>').join('');
+  // si viene de un turno, pre-llenar cliente y mostrar info
+  const turnoInfo=document.getElementById('vpTurnoInfo');
+  if(turnoId){
+    const t=(S.get('turnos')||[]).find(x=>x.id===turnoId);
+    if(t){
+      csel.value=t.clienteId;
+      csel.disabled=true;
+      const c=getCliente(t.clienteId),s=getServicio(t.servicioId);
+      turnoInfo.style.display='';
+      turnoInfo.innerHTML='📅 Turno vinculado: <strong>'+fmtDate(t.fecha)+' '+t.hora+'</strong> · '+c.nombre+' '+c.apellido+' · '+s.nombre;
+    }
+    document.getElementById('modalVentaProdTitle').textContent='Vender productos — Turno #'+turnoId;
+  } else {
+    csel.disabled=false;
+    turnoInfo.style.display='none';
+    document.getElementById('modalVentaProdTitle').textContent='Nueva Venta';
+  }
+  vpLoadItems();
+  _vpRefreshList();
+  openModal('modalVentaProd');
+}
+function renderVentas(){
+  const q=(document.getElementById('ventasSearch')||{}).value?.toLowerCase()||'';
+  const mes=(document.getElementById('ventasMesFiltro')||{}).value||'';
+  let list=[...(S.get('ventas_prod')||[])].reverse();
+  if(mes)list=list.filter(v=>v.fecha&&v.fecha.startsWith(mes));
+  if(q)list=list.filter(v=>{
+    const c=getCliente(v.clienteId);
+    return (c.nombre+' '+c.apellido).toLowerCase().includes(q)||
+      (v.items||[]).some(it=>it.nombre.toLowerCase().includes(q));
+  });
+  const tbody=document.getElementById('ventasProdTbody');if(!tbody)return;
+  if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🛍️</div><p>Sin ventas registradas. Usá "+ Nueva Venta" o el botón 🛍️ en un turno.</p></div></td></tr>';return;}
+  tbody.innerHTML=list.map(v=>{
+    const c=getCliente(v.clienteId);
+    let turnoCell='–';
+    if(v.turnoId){const t=(S.get('turnos')||[]).find(x=>x.id===v.turnoId);if(t){const s=getServicio(t.servicioId);turnoCell='<span style="font-size:.78rem">'+fmtDate(t.fecha)+' '+t.hora+'<br>'+s.nombre+'</span>';}}
+    const itemsCell=(v.items||[]).map(it=>it.cantidad+'× '+it.nombre).join('<br>');
+    return '<tr><td>'+fmtDate(v.fecha)+'</td><td>'+c.nombre+' '+c.apellido+'</td><td>'+turnoCell+'</td><td style="font-size:.82rem">'+itemsCell+'</td><td><strong>'+fmt(v.total)+'</strong></td><td>'+(v.metodoPago||'–')+'</td><td><button class="action-btn" onclick="deleteVentaProd('+v.id+')">🗑️</button></td></tr>';
+  }).join('');
+}
+function saveVentaProd(){
+  const clienteId=parseInt(document.getElementById('vpCliente').value)||0;
+  if(!clienteId){showToast('Seleccioná un cliente','error');return;}
+  if(!_vpItems.length){showToast('Agregá al menos un producto o combo','error');return;}
+  const turnoId=parseInt(document.getElementById('vpTurnoId').value)||null;
+  const obj={id:Date.now(),fecha:document.getElementById('vpFecha').value,clienteId,turnoId,items:JSON.parse(JSON.stringify(_vpItems)),metodoPago:document.getElementById('vpMetodo').value,total:_vpTotal(),notas:document.getElementById('vpNotas').value.trim()};
+  // descontar stock de productos
+  const prods=S.get('productos')||[];let prodsMod=false;
+  obj.items.forEach(it=>{
+    if(it.tipo==='producto'){
+      const idx=prods.findIndex(p=>p.id===it.itemId);
+      if(idx>=0){prods[idx]={...prods[idx],cantidad:Math.max(0,(prods[idx].cantidad||0)-it.cantidad)};prodsMod=true;}
+    }
+  });
+  if(prodsMod){S.set('productos',prods);checkStockAlerts();}
+  const list=S.get('ventas_prod')||[];list.push(obj);S.set('ventas_prod',list);
+  closeModal('modalVentaProd');
+  showToast('Venta guardada — stock actualizado','success');
+  renderTurnos();
+  if(document.getElementById('pageVentas')?.classList.contains('active'))renderVentas();
+}
+function deleteVentaProd(id){
+  if(!confirm('¿Eliminar esta venta? El stock NO se restaurará automáticamente.'))return;
+  S.set('ventas_prod',(S.get('ventas_prod')||[]).filter(v=>v.id!==id));
+  renderVentas();renderTurnos();showToast('Venta eliminada');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// VENTAS (COBROS DE TURNO)
 // ═══════════════════════════════════════════════════════════════════════
 let _vItems=[], _vPagos=[];
 function _ventaTotal(){ return _vItems.reduce((a,i)=>a+(i.precio||0)*(i.cantidad||1),0); }
@@ -1665,7 +1840,11 @@ function switchFinanzasTab(tab){
 }
 function finNavMes(delta){const d=new Date(_finMes+'-01T12:00');d.setMonth(d.getMonth()+delta);_finMes=d.toISOString().slice(0,7);switchFinanzasTab('resumen');}
 function finIrHoy(){_finMes=new Date().toISOString().slice(0,7);switchFinanzasTab('resumen');}
-function _ingMes(mes){return(S.get('ventas')||[]).filter(v=>v.fecha&&v.fecha.startsWith(mes)).reduce((a,v)=>a+(v.pagos||[]).reduce((s,p)=>s+(parseFloat(p.monto)||0),0),0);}
+function _ingMes(mes){
+  const svc=(S.get('ventas')||[]).filter(v=>v.fecha&&v.fecha.startsWith(mes)).reduce((a,v)=>a+(v.pagos||[]).reduce((s,p)=>s+(parseFloat(p.monto)||0),0),0);
+  const prod=(S.get('ventas_prod')||[]).filter(v=>v.fecha&&v.fecha.startsWith(mes)).reduce((a,v)=>a+(v.total||0),0);
+  return svc+prod;
+}
 function _egMes(mes){return(S.get('gastos')||[]).filter(g=>g.fecha&&g.fecha.startsWith(mes)).reduce((a,g)=>a+(g.monto||0),0);}
 function _finResumen(){
   const ml=new Date(_finMes+'-01T12:00').toLocaleDateString('es-AR',{month:'long',year:'numeric'});
