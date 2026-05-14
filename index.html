@@ -333,6 +333,7 @@ tr:hover td{background:var(--gray-50)}
     <div class="cal-view-tabs">
       <button class="cal-view-tab active" id="prodTabCatalogo" onclick="switchProductosTab('catalogo')">Catálogo</button>
       <button class="cal-view-tab" id="prodTabInsumos" onclick="switchProductosTab('insumos')">Insumos</button>
+      <button class="cal-view-tab" id="prodTabCompras" onclick="switchProductosTab('compras')">Compras</button>
       <span id="stockBadge" style="display:none;background:var(--red);color:white;border-radius:99px;font-size:.65rem;font-weight:700;padding:2px 8px;cursor:pointer" onclick="switchProductosTab('catalogo')" title="Productos con stock bajo">⚠ Stock bajo</span>
     </div>
     <div id="prodTabActionWrap"></div>
@@ -357,6 +358,16 @@ tr:hover td{background:var(--gray-50)}
     </div>
     <div id="insumosBajoStock" style="display:none;margin-bottom:12px"></div>
     <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Insumo</th><th>Categoría</th><th>Stock Actual</th><th>Stock Mínimo</th><th>Unidad</th><th>Proveedor</th><th>Notas</th><th></th></tr></thead><tbody id="insumosTbody"></tbody></table></div></div></div>
+  </div>
+  <!-- Compras -->
+  <div id="prodSecCompras" style="display:none">
+    <div class="search-bar">
+      <input class="search-input" type="text" placeholder="Buscar compra..." id="comprasSearch" oninput="renderCompras()">
+      <select id="comprasTipoFilter" class="field" style="width:160px;margin:0" onchange="renderCompras()">
+        <option value="">Todos</option><option value="producto">Productos</option><option value="insumo">Insumos</option>
+      </select>
+    </div>
+    <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Ítem</th><th>Cantidad</th><th>Costo Unit.</th><th>Total</th><th>Proveedor</th><th></th></tr></thead><tbody id="comprasTbody"></tbody></table></div></div></div>
   </div>
 </div>
 
@@ -499,7 +510,7 @@ tr:hover td{background:var(--gray-50)}
 <div class="modal-overlay" id="modalCliente"><div class="modal"><div class="modal-header"><h3>Cliente</h3><button class="modal-close" onclick="closeModal('modalCliente')">×</button></div><div class="modal-body"><input type="hidden" id="clienteEditId"><div class="form-row"><div class="field"><label>Nombre *</label><input type="text" id="clienteNombre"></div><div class="field"><label>Apellido *</label><input type="text" id="clienteApellido"></div></div><div class="form-row"><div class="field"><label>Email</label><input type="email" id="clienteEmail"></div><div class="field"><label>Teléfono</label><input type="tel" id="clienteTel"></div></div><div class="form-row"><div class="field"><label>Nacimiento</label><input type="date" id="clienteNac"></div><div class="field"><label>Instagram</label><input type="text" id="clienteInsta"></div></div><div class="field"><label>Notas</label><textarea id="clienteNotas"></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalCliente')">Cancelar</button><button class="btn btn-primary" onclick="saveCliente()">Guardar</button></div></div></div>
 <div class="modal-overlay" id="modalEmpleado"><div class="modal"><div class="modal-header"><h3>Empleado/a</h3><button class="modal-close" onclick="closeModal('modalEmpleado')">×</button></div><div class="modal-body"><input type="hidden" id="empleadoEditId"><div class="form-row"><div class="field"><label>Nombre *</label><input type="text" id="empleadoNombre"></div><div class="field"><label>Apellido *</label><input type="text" id="empleadoApellido"></div></div><div class="form-row"><div class="field"><label>Especialidad</label><input type="text" id="empleadoEsp"></div><div class="field"><label>Comisión %</label><input type="number" id="empleadoComision" value="40"></div></div><div class="form-row"><div class="field"><label>Email</label><input type="email" id="empleadoEmail"></div><div class="field"><label>Teléfono</label><input type="tel" id="empleadoTel"></div></div><div class="field"><label>Estado</label><select id="empleadoActivo"><option value="1">Activo</option><option value="0">Inactivo</option></select></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalEmpleado')">Cancelar</button><button class="btn btn-primary" onclick="saveEmpleado()">Guardar</button></div></div></div>
 <div class="modal-overlay" id="modalServicio"><div class="modal"><div class="modal-header"><h3>Servicio</h3><button class="modal-close" onclick="closeModal('modalServicio')">×</button></div><div class="modal-body"><input type="hidden" id="servicioEditId"><div class="field"><label>Nombre *</label><input type="text" id="servicioNombre"></div><div class="form-row"><div class="field"><label>Categoría</label><select id="servicioCategoria"><option>Facial Avanzado</option><option>Tratamientos Regenerativos</option><option>Micropigmentación</option><option>Tratamiento Corporal</option><option>Cejas</option><option>Bienestar y Terapias</option><option>Otros</option></select></div><div class="field"><label>Duración (min) *</label><input type="number" id="servicioDuracion"></div></div><div class="field"><label>Precio ($)</label><input type="number" id="servicioPrecio"></div><div class="field"><label>Descripción</label><textarea id="servicioDescripcion" rows="3"></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalServicio')">Cancelar</button><button class="btn btn-primary" onclick="saveServicio()">Guardar</button></div></div></div>
-<div class="modal-overlay" id="modalProducto"><div class="modal"><div class="modal-header"><h3>Producto</h3><button class="modal-close" onclick="closeModal('modalProducto')">×</button></div><div class="modal-body"><input type="hidden" id="modalProductoId"><div class="field"><label>Nombre *</label><input type="text" id="modalProductoNombre"></div><div class="form-row"><div class="field"><label>Categoría</label><input type="text" id="modalProductoCategoria" placeholder="Ej: Cremas, Aceites..."></div><div class="field"><label>Costo ($)</label><input type="number" id="modalProductoCosto" value="0" min="0"></div></div><div class="form-row"><div class="field"><label>Precio Venta ($)</label><input type="number" id="modalProductoPrecio" value="0" min="0"></div><div class="field"><label>Stock Real</label><input type="number" id="modalProductoCantidad" value="0" min="0"></div></div><div class="field"><label>Stock Mínimo</label><input type="number" id="modalProductoMinimo" value="0" min="0"></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button><button class="btn btn-primary" onclick="saveProducto()">Guardar</button></div></div></div>
+<div class="modal-overlay" id="modalProducto"><div class="modal"><div class="modal-header"><h3>Producto</h3><button class="modal-close" onclick="closeModal('modalProducto')">×</button></div><div class="modal-body"><input type="hidden" id="modalProductoId"><div class="field"><label>Nombre *</label><input type="text" id="modalProductoNombre"></div><div class="form-row"><div class="field"><label>Categoría</label><input type="text" id="modalProductoCategoria" placeholder="Ej: Cremas, Aceites..."></div><div class="field"><label>Costo ($)</label><input type="number" id="modalProductoCosto" value="0" min="0"></div></div><div class="form-row"><div class="field"><label>Precio Venta ($)</label><input type="number" id="modalProductoPrecio" value="0" min="0"></div><div class="field"><label>Stock Real</label><input type="number" id="modalProductoCantidad" value="0" min="0"></div></div><div class="field"><label>Stock Mínimo</label><input type="number" id="modalProductoMinimo" value="0" min="0"></div><div class="field"><label>Descripción</label><textarea id="modalProductoDescripcion" rows="2" placeholder="Detalles del producto..."></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button><button class="btn btn-primary" onclick="saveProducto()">Guardar</button></div></div></div>
 <div class="modal-overlay" id="modalCombo"><div class="modal"><div class="modal-header"><h3>Combo</h3><button class="modal-close" onclick="closeModal('modalCombo')">×</button></div><div class="modal-body"><input type="hidden" id="comboEditId"><div class="field"><label>Nombre *</label><input type="text" id="comboNombre"></div><div class="field"><label>Descripción</label><textarea id="comboDescripcion"></textarea></div><div class="form-row"><div class="field"><label>Precio ($)</label><input type="number" id="comboPrecio"></div><div class="field"><label>Descuento %</label><input type="number" id="comboDescuento" value="0"></div></div><div class="field"><label>Servicios incluidos</label><div id="comboServiciosCheck"></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalCombo')">Cancelar</button><button class="btn btn-primary" onclick="saveCombo()">Guardar</button></div></div></div>
 <div class="modal-overlay" id="modalCaja"><div class="modal"><div class="modal-header"><h3>Movimiento de Caja</h3><button class="modal-close" onclick="closeModal('modalCaja')">×</button></div><div class="modal-body"><input type="hidden" id="cajaEditId"><div class="form-row"><div class="field"><label>Tipo</label><select id="cajaTipo"><option value="ingreso">Ingreso</option><option value="egreso">Egreso</option></select></div><div class="field"><label>Categoría</label><select id="cajaCategoria"><option>Servicio</option><option>Producto</option><option>Alquiler</option><option>Insumos</option><option>Otros</option></select></div></div><div class="field"><label>Descripción *</label><input type="text" id="cajaDescripcion"></div><div class="form-row"><div class="field"><label>Monto *</label><input type="number" id="cajaMonto"></div><div class="field"><label>Método</label><select id="cajaMetodo"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="mercadopago">MercadoPago</option></select></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalCaja')">Cancelar</button><button class="btn btn-primary" onclick="saveCaja()">Guardar</button></div></div></div>
 <div class="modal-overlay" id="modalGasto"><div class="modal"><div class="modal-header"><h3>Gasto</h3><button class="modal-close" onclick="closeModal('modalGasto')">×</button></div><div class="modal-body"><input type="hidden" id="gastoEditId"><div class="form-row"><div class="field"><label>Fecha</label><input type="date" id="gastoFecha"></div><div class="field"><label>Categoría</label><select id="gastoCategoria"><option>Alquiler</option><option>Insumos</option><option>Servicios</option><option>Personal</option><option>Equipamiento</option><option>Marketing</option><option>Otros</option></select></div></div><div class="field"><label>Descripción *</label><input type="text" id="gastoDescripcion"></div><div class="form-row"><div class="field"><label>Monto *</label><input type="number" id="gastoMonto"></div><div class="field"><label>Método</label><select id="gastoMetodo"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option></select></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalGasto')">Cancelar</button><button class="btn btn-primary" onclick="saveGasto()">Guardar</button></div></div></div>
@@ -508,6 +519,8 @@ tr:hover td{background:var(--gray-50)}
 <div class="modal-overlay" id="modalImport"><div class="modal"><div class="modal-header"><h3 id="importModalTitle">Importar</h3><button class="modal-close" onclick="closeModal('modalImport')">×</button></div><div class="modal-body"><p id="importModalDesc" style="margin-bottom:12px;font-size:.85rem;color:var(--gray-500)"></p><div id="importTemplate" style="background:var(--gray-100);padding:10px;border-radius:8px;font-size:.8rem;margin-bottom:14px"></div><input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="width:100%;margin-bottom:12px" onchange="previewImport(this)"><div id="importPreview" style="display:none"><p style="font-size:.85rem;font-weight:600;margin-bottom:8px">Vista previa (<span id="importCount">0</span> registros):</p><div style="max-height:200px;overflow:auto;border:1px solid var(--gray-200);border-radius:6px"><table style="font-size:.75rem"><thead id="importPreviewHead"></thead><tbody id="importPreviewBody"></tbody></table></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalImport')">Cancelar</button><button class="btn btn-primary" id="importConfirmBtn" onclick="confirmarImport()" disabled>Importar</button></div></div></div>
 
 <div class="modal-overlay" id="modalInsumo"><div class="modal"><div class="modal-header"><h3 id="modalInsumoTitle">Insumo</h3><button class="modal-close" onclick="closeModal('modalInsumo')">×</button></div><div class="modal-body"><input type="hidden" id="insumoEditId"><div class="field"><label>Nombre *</label><input type="text" id="insumoNombre" placeholder="Ej: Aguja 30G, Crema vitamina C..."></div><div class="form-row"><div class="field"><label>Categoría</label><select id="insumoCategoria"><option>Cremas y Aceites</option><option>Descartables</option><option>Agujas y Cánulas</option><option>Higiene y Desinfección</option><option>Equipamiento Menor</option><option>Otros</option></select></div><div class="field"><label>Unidad</label><select id="insumoUnidad"><option value="unidades">Unidades</option><option value="ml">ml</option><option value="gramos">gramos</option><option value="cajas">cajas</option><option value="packs">packs</option></select></div></div><div class="form-row"><div class="field"><label>Stock Actual *</label><input type="number" id="insumoCantidad" value="0" min="0"></div><div class="field"><label>Stock Mínimo</label><input type="number" id="insumoMinimo" value="0" min="0"></div></div><div class="form-row"><div class="field"><label>Proveedor</label><input type="text" id="insumoProveedor" placeholder="Nombre del proveedor"></div><div class="field"><label>Costo Unitario ($)</label><input type="number" id="insumoCosto" value="0" min="0"></div></div><div class="field"><label>Notas</label><textarea id="insumoNotas" rows="2" placeholder="Indicaciones de uso, vencimiento, etc."></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalInsumo')">Cancelar</button><button class="btn btn-primary" onclick="saveInsumo()">Guardar</button></div></div></div>
+<!-- MODAL COMPRA -->
+<div class="modal-overlay" id="modalCompra"><div class="modal"><div class="modal-header"><h3 id="modalCompraTitle">Nueva Compra</h3><button class="modal-close" onclick="closeModal('modalCompra')">×</button></div><div class="modal-body"><input type="hidden" id="compraEditId"><div class="form-row"><div class="field"><label>Fecha</label><input type="date" id="compraFecha"></div><div class="field"><label>Tipo</label><select id="compraTipo" onchange="loadCompraItems()"><option value="producto">Producto</option><option value="insumo">Insumo</option></select></div></div><div class="field"><label>Ítem *</label><select id="compraItem"></select></div><div class="form-row"><div class="field"><label>Cantidad *</label><input type="number" id="compraCantidad" value="1" min="1"></div><div class="field"><label>Costo Unitario ($)</label><input type="number" id="compraCosto" value="0" min="0"></div></div><div class="field"><label>Proveedor</label><input type="text" id="compraProveedor" placeholder="Nombre del proveedor"></div><div class="field"><label>Notas</label><textarea id="compraNotas" rows="2"></textarea></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalCompra')">Cancelar</button><button class="btn btn-primary" onclick="saveCompra()">Guardar y actualizar stock</button></div></div></div>
 <!-- MODAL USUARIO -->
 <div class="modal-overlay" id="modalUsuario"><div class="modal"><div class="modal-header"><h3 id="modalUsuarioTitle">Nuevo Usuario</h3><button class="modal-close" onclick="closeModal('modalUsuario')">×</button></div><div class="modal-body"><input type="hidden" id="usuarioEditId"><div class="form-row"><div class="field"><label>Nombre completo *</label><input type="text" id="usuarioNombre" placeholder="Ej: María González" autocomplete="off"></div><div class="field"><label>Nombre de usuario *</label><input type="text" id="usuarioUser" placeholder="Ej: maria" autocomplete="off"></div></div><div class="form-row"><div class="field"><label>Contraseña</label><input type="password" id="usuarioPass" autocomplete="new-password" placeholder="Dejar vacío para no cambiar"></div><div class="field"><label>Confirmar contraseña</label><input type="password" id="usuarioPass2" placeholder="Repetir contraseña"></div></div><div class="form-row"><div class="field"><label>Rol *</label><select id="usuarioRol" onchange="toggleUsuarioEmpleado()"><option value="profesional">Profesional</option><option value="admin">Administrador</option></select></div><div class="field" id="usuarioEmpleadoWrap"><label>Empleado/a asociado/a</label><select id="usuarioEmpleado"><option value="">Sin asociar</option></select></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalUsuario')">Cancelar</button><button class="btn btn-primary" onclick="saveUsuario()">Guardar</button></div></div></div>
 
@@ -892,6 +905,7 @@ function initSampleData() {
     {id:2,clienteId:2,empleadoId:2,servicioId:13,fecha:hoy,hora:'14:00',estado:'pendiente',metodoPago:'',notas:'',precio:55000},
   ]);
   S.set('ventas', []);
+  S.set('compras', []);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1405,10 +1419,11 @@ function renderProductos(){
   _renderProdTabAction();
   if(_prodTab==='catalogo') _renderCatalogo();
   else if(_prodTab==='insumos') renderInsumos();
+  else if(_prodTab==='compras') renderCompras();
 }
 function switchProductosTab(tab){
   _prodTab=tab;
-  ['catalogo','insumos'].forEach(t=>{
+  ['catalogo','insumos','compras'].forEach(t=>{
     const btn=document.getElementById('prodTab'+t.charAt(0).toUpperCase()+t.slice(1));
     const sec=document.getElementById('prodSec'+t.charAt(0).toUpperCase()+t.slice(1));
     if(btn)btn.classList.toggle('active',t===tab);
@@ -1417,20 +1432,22 @@ function switchProductosTab(tab){
   _renderProdTabAction();
   if(tab==='catalogo') _renderCatalogo();
   else if(tab==='insumos') renderInsumos();
+  else if(tab==='compras') renderCompras();
 }
 function _renderProdTabAction(){
   const wrap=document.getElementById('prodTabActionWrap'); if(!wrap)return;
   const cfg={
     catalogo:'<button class="btn btn-primary btn-sm" onclick="openModalProducto()">+ Nuevo Producto</button>',
     insumos: '<button class="btn btn-primary btn-sm" onclick="openModalInsumo()">+ Nuevo Insumo</button>',
+    compras: '<button class="btn btn-primary btn-sm" onclick="openModalCompra()">+ Nueva Compra</button>',
   };
   wrap.innerHTML=cfg[_prodTab]||'';
 }
 function _renderCatalogo(){const q=(document.getElementById('productosSearch')||{}).value?.toLowerCase()||'';let list=(S.get('productos')||[]).filter(p=>!q||p.nombre.toLowerCase().includes(q));const tbody=document.getElementById('productosTbody');if(!tbody)return;if(!list.length){tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🛍️</div><p>Sin productos. Usá "+ Nuevo Producto" o importá desde Excel.</p></div></td></tr>';return;}tbody.innerHTML=list.map(p=>{const alarma=p.cantidad!=null&&p.minimo!=null&&p.cantidad<=p.minimo;const valorizado=fmt((p.cantidad||0)*(p.costo||0));return'<tr><td><strong>'+p.nombre+'</strong></td><td>'+fmt(p.costo||0)+'</td><td>'+(p.categoria||'–')+'</td><td style="'+(alarma?'color:var(--red);font-weight:700':'')+'">'+( p.cantidad!=null?p.cantidad:'–')+'</td><td>'+(p.minimo!=null?p.minimo:'–')+'</td><td>'+(alarma?'<span class="badge badge-red">⚠ Bajo</span>':'<span class="badge badge-green">OK</span>')+'</td><td>'+fmt(p.precio||0)+'</td><td>'+valorizado+'</td><td><button class="action-btn" onclick="editProducto('+p.id+')">✏️</button><button class="action-btn" onclick="deleteProducto('+p.id+')">🗑️</button></td></tr>';}).join('');}
-function openModalProducto(){document.getElementById('modalProductoId').value='';document.getElementById('modalProductoNombre').value='';document.getElementById('modalProductoCategoria').value='';document.getElementById('modalProductoCosto').value='0';document.getElementById('modalProductoPrecio').value='0';document.getElementById('modalProductoCantidad').value='0';document.getElementById('modalProductoMinimo').value='0';openModal('modalProducto');}
-function editProducto(id){const p=(S.get('productos')||[]).find(x=>x.id===id);if(!p)return;document.getElementById('modalProductoId').value=id;document.getElementById('modalProductoNombre').value=p.nombre||'';document.getElementById('modalProductoCategoria').value=p.categoria||'';document.getElementById('modalProductoCosto').value=p.costo||0;document.getElementById('modalProductoPrecio').value=p.precio||0;document.getElementById('modalProductoCantidad').value=p.cantidad||0;document.getElementById('modalProductoMinimo').value=p.minimo||0;openModal('modalProducto');}
+function openModalProducto(){document.getElementById('modalProductoId').value='';document.getElementById('modalProductoNombre').value='';document.getElementById('modalProductoCategoria').value='';document.getElementById('modalProductoCosto').value='0';document.getElementById('modalProductoPrecio').value='0';document.getElementById('modalProductoCantidad').value='0';document.getElementById('modalProductoMinimo').value='0';document.getElementById('modalProductoDescripcion').value='';openModal('modalProducto');}
+function editProducto(id){const p=(S.get('productos')||[]).find(x=>x.id===id);if(!p)return;document.getElementById('modalProductoId').value=id;document.getElementById('modalProductoNombre').value=p.nombre||'';document.getElementById('modalProductoCategoria').value=p.categoria||'';document.getElementById('modalProductoCosto').value=p.costo||0;document.getElementById('modalProductoPrecio').value=p.precio||0;document.getElementById('modalProductoCantidad').value=p.cantidad||0;document.getElementById('modalProductoMinimo').value=p.minimo||0;document.getElementById('modalProductoDescripcion').value=p.descripcion||'';openModal('modalProducto');}
 function deleteProducto(id){if(!confirm('¿Eliminar producto?'))return;S.set('productos',(S.get('productos')||[]).filter(p=>p.id!==id));_renderCatalogo();checkStockAlerts();showToast('Eliminado');}
-function saveProducto(){const id=parseInt(document.getElementById('modalProductoId').value)||null;const obj={id:id||Date.now(),nombre:document.getElementById('modalProductoNombre').value.trim(),categoria:document.getElementById('modalProductoCategoria').value.trim(),costo:parseFloat(document.getElementById('modalProductoCosto').value)||0,precio:parseFloat(document.getElementById('modalProductoPrecio').value)||0,cantidad:parseInt(document.getElementById('modalProductoCantidad').value)||0,minimo:parseInt(document.getElementById('modalProductoMinimo').value)||0};if(!obj.nombre){showToast('Nombre requerido','error');return;}let list=S.get('productos')||[];if(id){list=list.map(p=>p.id===id?obj:p);}else list.push(obj);S.set('productos',list);closeModal('modalProducto');showToast('Producto guardado','success');_renderCatalogo();checkStockAlerts();}
+function saveProducto(){const id=parseInt(document.getElementById('modalProductoId').value)||null;const obj={id:id||Date.now(),nombre:document.getElementById('modalProductoNombre').value.trim(),categoria:document.getElementById('modalProductoCategoria').value.trim(),costo:parseFloat(document.getElementById('modalProductoCosto').value)||0,precio:parseFloat(document.getElementById('modalProductoPrecio').value)||0,cantidad:parseInt(document.getElementById('modalProductoCantidad').value)||0,minimo:parseInt(document.getElementById('modalProductoMinimo').value)||0,descripcion:document.getElementById('modalProductoDescripcion').value.trim()};if(!obj.nombre){showToast('Nombre requerido','error');return;}let list=S.get('productos')||[];if(id){list=list.map(p=>p.id===id?obj:p);}else list.push(obj);S.set('productos',list);closeModal('modalProducto');showToast('Producto guardado','success');_renderCatalogo();checkStockAlerts();}
 
 // ═══════════════════════════════════════════════════════════════════════
 // COMBOS
@@ -1598,11 +1615,30 @@ function saveVenta(){
   const id=parseInt(document.getElementById('ventaEditId').value)||null;
   const turnoId=parseInt(document.getElementById('ventaTurnoId').value)||null;
   const obj={id:id||Date.now(),fecha:document.getElementById('ventaFecha').value,clienteId,empleadoId:parseInt(document.getElementById('ventaEmpleado').value)||null,turnoId,items:JSON.parse(JSON.stringify(_vItems)),pagos:JSON.parse(JSON.stringify(_vPagos)),total:_ventaTotal(),notas:document.getElementById('ventaNotas').value.trim()};
+  const esNueva=!id;
   let list=S.get('ventas')||[];
   if(id){const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=obj;}else list.push(obj);
-  S.set('ventas',list); closeModal('modalVenta'); showToast('Venta guardada','success');
+  S.set('ventas',list);
+  // descontar stock de productos vendidos (solo en ventas nuevas)
+  if(esNueva){
+    const prods=S.get('productos')||[];let prodsMod=false;
+    const ins=S.get('insumos')||[];let insMod=false;
+    obj.items.forEach(it=>{
+      if(it.tipo==='producto'){
+        const idx=prods.findIndex(p=>p.id===parseInt(it.itemId));
+        if(idx>=0){prods[idx]={...prods[idx],cantidad:Math.max(0,(prods[idx].cantidad||0)-(it.cantidad||1))};prodsMod=true;}
+      } else if(it.tipo==='insumo'){
+        const idx=ins.findIndex(i=>i.id===parseInt(it.itemId));
+        if(idx>=0){ins[idx]={...ins[idx],cantidad:Math.max(0,(ins[idx].cantidad||0)-(it.cantidad||1))};insMod=true;}
+      }
+    });
+    if(prodsMod){S.set('productos',prods);checkStockAlerts();}
+    if(insMod)S.set('insumos',ins);
+  }
+  closeModal('modalVenta'); showToast('Venta guardada','success');
   renderTurnos(); renderDashboard();
   if(document.getElementById('pageFinanzas')?.classList.contains('active')) renderVentasTab();
+  if(document.getElementById('pageProductos')?.classList.contains('active')) renderProductos();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1685,6 +1721,65 @@ function openModalStock(){document.getElementById('stockEditId').value='';docume
 function editStock(id){const p=(S.get('stock')||[]).find(x=>x.id===id);if(!p)return;document.getElementById('stockEditId').value=id;document.getElementById('stockNombre').value=p.nombre;document.getElementById('stockCategoria').value=p.categoria||'Cremas';document.getElementById('stockCantidad').value=p.cantidad||0;document.getElementById('stockMinimo').value=p.minimo||0;document.getElementById('stockPrecio').value=p.precio||0;document.getElementById('stockUnidad').value=p.unidad||'unidades';openModal('modalStock');}
 function deleteStock(id){if(!confirm('¿Eliminar?'))return;S.set('stock',(S.get('stock')||[]).filter(p=>p.id!==id));renderStock();checkStockAlerts();showToast('Eliminado');}
 function saveStock(){const id=parseInt(document.getElementById('stockEditId').value)||null;const obj={id:id||Date.now(),nombre:document.getElementById('stockNombre').value.trim(),categoria:document.getElementById('stockCategoria').value,cantidad:parseInt(document.getElementById('stockCantidad').value)||0,minimo:parseInt(document.getElementById('stockMinimo').value)||0,precio:parseFloat(document.getElementById('stockPrecio').value)||0,unidad:document.getElementById('stockUnidad').value};if(!obj.nombre){showToast('Nombre requerido','error');return;}let list=S.get('stock')||[];if(id){const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=obj;}else list.push(obj);S.set('stock',list);closeModal('modalStock');showToast('Guardado','success');renderStock();checkStockAlerts();}
+
+// ═══════════════════════════════════════════════════════════════════════
+// COMPRAS
+// ═══════════════════════════════════════════════════════════════════════
+function renderCompras(){
+  const q=(document.getElementById('comprasSearch')||{}).value?.toLowerCase()||'';
+  const tipoF=(document.getElementById('comprasTipoFilter')||{}).value||'';
+  let list=(S.get('compras')||[]).filter(c=>{
+    if(tipoF&&c.tipo!==tipoF)return false;
+    if(q&&!c.nombre.toLowerCase().includes(q)&&!(c.proveedor||'').toLowerCase().includes(q))return false;
+    return true;
+  }).slice().reverse();
+  const tbody=document.getElementById('comprasTbody');if(!tbody)return;
+  if(!list.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📦</div><p>Sin compras registradas. Usá "+ Nueva Compra" para registrar mercadería recibida.</p></div></td></tr>';return;}
+  tbody.innerHTML=list.map(c=>'<tr><td>'+fmtDate(c.fecha)+'</td><td><span class="badge '+(c.tipo==='producto'?'badge-purple':'badge-blue')+'">'+(c.tipo==='producto'?'Producto':'Insumo')+'</span></td><td><strong>'+c.nombre+'</strong></td><td>'+c.cantidad+'</td><td>'+fmt(c.costoUnitario||0)+'</td><td><strong>'+fmt((c.cantidad||0)*(c.costoUnitario||0))+'</strong></td><td>'+(c.proveedor||'–')+'</td><td><button class="action-btn" onclick="deleteCompra('+c.id+')">🗑️</button></td></tr>').join('');
+}
+function openModalCompra(){
+  document.getElementById('compraEditId').value='';
+  document.getElementById('compraFecha').value=new Date().toISOString().split('T')[0];
+  document.getElementById('compraTipo').value='producto';
+  document.getElementById('compraCantidad').value='1';
+  document.getElementById('compraCosto').value='0';
+  document.getElementById('compraProveedor').value='';
+  document.getElementById('compraNotas').value='';
+  loadCompraItems();
+  openModal('modalCompra');
+}
+function loadCompraItems(){
+  const tipo=document.getElementById('compraTipo').value;
+  const list=tipo==='producto'?(S.get('productos')||[]):(S.get('insumos')||[]);
+  const sel=document.getElementById('compraItem');
+  sel.innerHTML=list.length?list.map(i=>'<option value="'+i.id+'">'+i.nombre+'</option>').join(''):'<option value="">Sin ítems cargados</option>';
+}
+function deleteCompra(id){if(!confirm('¿Eliminar esta compra? El stock NO se revertirá.'))return;S.set('compras',(S.get('compras')||[]).filter(c=>c.id!==id));renderCompras();showToast('Compra eliminada');}
+function saveCompra(){
+  const fecha=document.getElementById('compraFecha').value;
+  const tipo=document.getElementById('compraTipo').value;
+  const itemId=parseInt(document.getElementById('compraItem').value)||null;
+  const cantidad=parseInt(document.getElementById('compraCantidad').value)||0;
+  const costoUnitario=parseFloat(document.getElementById('compraCosto').value)||0;
+  if(!itemId||!cantidad){showToast('Seleccioná un ítem y cantidad','error');return;}
+  // obtener nombre del ítem
+  const itemList=tipo==='producto'?(S.get('productos')||[]):(S.get('insumos')||[]);
+  const item=itemList.find(i=>i.id===itemId);
+  if(!item){showToast('Ítem no encontrado','error');return;}
+  // guardar compra
+  const compra={id:Date.now(),fecha,tipo,itemId,nombre:item.nombre,cantidad,costoUnitario,proveedor:document.getElementById('compraProveedor').value.trim(),notas:document.getElementById('compraNotas').value.trim()};
+  const compras=S.get('compras')||[];compras.push(compra);S.set('compras',compras);
+  // actualizar stock del ítem
+  if(tipo==='producto'){
+    const prods=S.get('productos')||[];
+    S.set('productos',prods.map(p=>p.id===itemId?{...p,cantidad:(p.cantidad||0)+cantidad}:p));
+    checkStockAlerts();
+  } else {
+    const ins=S.get('insumos')||[];
+    S.set('insumos',ins.map(i=>i.id===itemId?{...i,cantidad:(i.cantidad||0)+cantidad}:i));
+  }
+  closeModal('modalCompra');showToast('Compra registrada — stock actualizado','success');renderCompras();
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // REPORTES
