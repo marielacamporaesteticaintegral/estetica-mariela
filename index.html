@@ -1166,13 +1166,14 @@ function verHistorialCliente(id){
   const servicios=S.get('servicios')||[], equipo=S.get('equipo')||[];
   const hoy=new Date().toISOString().split('T')[0];
   const turnos=(S.get('turnos')||[]).filter(t=>t.clienteId===id).sort((a,b)=>b.fecha.localeCompare(a.fecha)||(b.hora||'').localeCompare(a.hora||''));
-  const activos=turnos.filter(t=>t.estado!=='cancelado');
+  const ventas=(S.get('ventas')||[]).filter(v=>v.clienteId===id).sort((a,b)=>b.fecha.localeCompare(a.fecha));
   const proximos=turnos.filter(t=>t.fecha>=hoy&&t.estado!=='completado'&&t.estado!=='cancelado');
-  const pasados=turnos.filter(t=>t.fecha<hoy||t.estado==='completado');
-  const totalGastado=activos.reduce((a,t)=>a+(t.precio||0),0);
-  const ticketProm=activos.length?Math.round(totalGastado/activos.length):0;
+
+  // Stats desde ventas
+  const totalCobrado=ventas.reduce((a,v)=>a+(v.pagos||[]).reduce((s,p)=>s+(parseFloat(p.monto)||0),0),0);
+  const ticketProm=ventas.length?Math.round(totalCobrado/ventas.length):0;
   const svCount={};
-  activos.forEach(t=>{if(t.servicioId)svCount[t.servicioId]=(svCount[t.servicioId]||0)+1;});
+  ventas.forEach(v=>(v.items||[]).filter(i=>i.tipo==='servicio').forEach(i=>{svCount[i.itemId]=(svCount[i.itemId]||0)+i.cantidad;}));
   const svFavId=Object.entries(svCount).sort((a,b)=>b[1]-a[1])[0];
   const svFav=svFavId?(servicios.find(s=>s.id===parseInt(svFavId[0]))||{}).nombre:'—';
 
@@ -1185,29 +1186,55 @@ function verHistorialCliente(id){
     const gabColor=gab==='1'?'#7C3AED':gab==='2'?'#EC4899':'';
     const esBg={completado:'#D1FAE5',confirmado:'#EDE9FE',pendiente:'#FEF3C7',cancelado:'#FEE2E2'}[t.estado]||'#F3F4F6';
     const esC={completado:'#065F46',confirmado:'#5B21B6',pendiente:'#92400E',cancelado:'#991B1B'}[t.estado]||'#374151';
+    const venta=ventas.find(v=>v.turnoId===t.id);
+    const cobroBadge=venta?'<span style="font-size:.65rem;background:#D1FAE5;color:#065F46;border-radius:4px;padding:1px 5px">💰 cobrado</span>':'<span style="font-size:.65rem;background:#F3F4F6;color:#6B7280;border-radius:4px;padding:1px 5px">sin cobrar</span>';
     return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--gray-100)">'
       +'<div style="min-width:88px;font-size:.78rem;font-weight:700;color:var(--gray-600)">'+fmtDate(t.fecha)+'<br><span style="font-weight:400;color:var(--gray-400)">'+(t.hora||'').slice(0,5)+'</span></div>'
       +'<div style="flex:1;min-width:0"><div style="font-size:.83rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(sv?sv.nombre:'?')+'</div>'
         +(prof?'<div style="font-size:.7rem;color:var(--gray-400)">'+prof.nombre+' '+prof.apellido+(gab?' · <span style="color:'+gabColor+';font-weight:700">G'+gab+'</span>':'')+'</div>':'')
+        +'<div style="margin-top:2px">'+cobroBadge+'</div>'
       +'</div>'
       +'<div style="font-size:.83rem;font-weight:700;color:var(--gray-700);white-space:nowrap">'+fmt(t.precio)+'</div>'
       +'<span style="font-size:.68rem;font-weight:600;background:'+esBg+';color:'+esC+';border-radius:4px;padding:2px 7px;white-space:nowrap">'+t.estado+'</span>'
       +'</div>';
   };
 
+  const tbIco={servicio:'✨',producto:'🛍️',combo:'🎁'};
+  const rowVenta=v=>{
+    const pagado=(v.pagos||[]).reduce((a,p)=>a+(parseFloat(p.monto)||0),0);
+    const total=(v.items||[]).reduce((a,i)=>a+(i.precio||0)*(i.cantidad||1),0);
+    const metodos=[...new Set((v.pagos||[]).map(p=>p.metodo))].filter(Boolean).join(', ');
+    return '<div style="padding:9px 0;border-bottom:1px solid var(--gray-100)">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+        +'<div style="min-width:88px;font-size:.78rem;font-weight:700;color:var(--gray-600)">'+fmtDate(v.fecha)+'</div>'
+        +'<div style="flex:1;font-size:.83rem;font-weight:600;color:var(--gray-700)">'+(v.turnoId?'Cobro de turno':'Venta directa')+'</div>'
+        +'<div style="font-size:.83rem;font-weight:700">'+fmt(pagado)+'</div>'
+        +(metodos?'<span style="font-size:.68rem;color:var(--gray-400)">'+metodos+'</span>':'')
+      +'</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:4px;padding-left:96px">'
+        +(v.items||[]).map(i=>'<span style="font-size:.72rem;background:var(--gray-100);border-radius:4px;padding:2px 7px">'+(tbIco[i.tipo]||'')+'&nbsp;'+i.nombre+(i.cantidad>1?' x'+i.cantidad:'')+(i.precio?' · '+fmt(i.precio*i.cantidad):'')+'</span>').join('')
+      +'</div>'
+      +(total>pagado?'<div style="padding-left:96px;font-size:.72rem;color:var(--orange);margin-top:3px">Pendiente: '+fmt(total-pagado)+'</div>':'')
+      +'</div>';
+  };
+
+  // Combinar turnos y ventas en un historial cronológico
   const el=document.getElementById('historialClienteBody');
   document.getElementById('historialClienteNombre').textContent=c.nombre+' '+c.apellido+(c.instagram?' · '+c.instagram:'');
   el.innerHTML=
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
-      +statCard(activos.length,'Turnos','#7C3AED')
-      +statCard(fmt(totalGastado),'Total gastado','#10B981')
+      +statCard(ventas.length,'Compras','#7C3AED')
+      +statCard(fmt(totalCobrado),'Total cobrado','#10B981')
       +statCard(fmt(ticketProm),'Ticket prom.','#F59E0B')
-      +statCard(svFav,'Servicio fav.','#EC4899')
+      +statCard(svFav,'Serv. favorito','#EC4899')
     +'</div>'
     +(proximos.length?'<div style="margin-bottom:12px"><div style="font-size:.73rem;font-weight:700;text-transform:uppercase;color:var(--primary);margin-bottom:6px">🗓️ Próximos turnos</div>'
       +proximos.map(t=>{const sv=servicios.find(s=>s.id===t.servicioId);return '<div style="background:var(--primary-light);border-radius:6px;padding:8px 12px;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;font-size:.83rem"><div><strong>'+fmtDate(t.fecha)+'</strong> '+t.hora+' — '+(sv?sv.nombre:'?')+'</div><span class="badge badge-purple">'+t.estado+'</span></div>';}).join('')+'</div>':'')
-    +'<div style="font-size:.73rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);margin-bottom:4px">📋 Historial completo</div>'
-    +'<div style="max-height:320px;overflow-y:auto">'+(turnos.length?turnos.map(rowTurno).join(''):'<div class="empty-state"><div class="empty-icon">📭</div><p>Sin turnos registrados</p></div>')+'</div>';
+    +(turnos.length?'<div style="font-size:.73rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);margin-bottom:4px">🗓️ Turnos</div>'
+      +'<div style="max-height:220px;overflow-y:auto;margin-bottom:14px">'+turnos.map(rowTurno).join('')+'</div>':'')
+    +(ventas.length?'<div style="font-size:.73rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);margin-bottom:4px">🛍️ Historial de compras</div>'
+      +'<div style="max-height:260px;overflow-y:auto">'+ventas.map(rowVenta).join('')+'</div>':'')
+    +(!turnos.length&&!ventas.length?'<div class="empty-state"><div class="empty-icon">📭</div><p>Sin actividad registrada</p></div>':'');
   openModal('modalHistorialCliente');
 }
 
@@ -1492,9 +1519,15 @@ function renderPickerItems(){
   document.getElementById('pickerCantidad').value='1';
 }
 function pickerItemChange(){
+  const tipo=(document.getElementById('pickerTipo')||{}).value||'servicio';
   const sel=document.getElementById('pickerItem');
-  const opt=sel.options[sel.selectedIndex];
-  if(opt&&opt.dataset.precio) document.getElementById('pickerPrecio').value=opt.dataset.precio;
+  const itemId=parseInt(sel.value)||0; if(!itemId)return;
+  let items=[];
+  if(tipo==='servicio') items=S.get('servicios')||[];
+  else if(tipo==='producto') items=S.get('productos')||[];
+  else if(tipo==='combo') items=S.get('combos')||[];
+  const item=items.find(i=>i.id===itemId);
+  if(item) document.getElementById('pickerPrecio').value=item.precio||0;
 }
 function confirmarItemPicker(){
   const tipo=(document.getElementById('pickerTipo')||{}).value||'servicio';
