@@ -243,10 +243,8 @@ tr:hover td{background:var(--gray-50)}
     <div class="nav-item" data-page="servicios"><span class="icon">✨</span>Servicios</div>
     <div class="nav-item" data-page="productos"><span class="icon">🛍️</span>Productos</div>
     <div class="nav-item" data-page="combos"><span class="icon">🎁</span>Combos</div>
-    <div class="nav-item" data-page="insumos"><span class="icon">🧴</span>Insumos</div>
     <div class="nav-section admin-only">Finanzas</div>
     <div class="nav-item admin-only" data-page="finanzas"><span class="icon">💰</span>Finanzas</div>
-    <div class="nav-item admin-only" data-page="stock"><span class="icon">📦</span>Stock<span class="nav-badge" id="stockBadge" style="display:none">!</span></div>
     <div class="nav-item admin-only" data-page="reportes"><span class="icon">📈</span>Reportes</div>
     <div class="nav-section admin-only">Marketing</div>
     <div class="nav-item admin-only" data-page="marketing"><span class="icon">📣</span>Marketing</div>
@@ -329,13 +327,42 @@ tr:hover td{background:var(--gray-50)}
   <div id="serviciosList"></div>
 </div>
 
-<!-- PRODUCTOS -->
+<!-- PRODUCTOS + INSUMOS + STOCK -->
 <div class="page" id="pageProductos">
-  <div class="search-bar">
-    <input class="search-input" type="text" placeholder="Buscar producto..." id="productosSearch" oninput="renderProductos()">
-    <button class="btn btn-secondary btn-sm" onclick="abrirImportModal('productos')">📥 Importar Excel</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+    <div class="cal-view-tabs">
+      <button class="cal-view-tab active" id="prodTabCatalogo" onclick="switchProductosTab('catalogo')">Catálogo</button>
+      <button class="cal-view-tab" id="prodTabInsumos" onclick="switchProductosTab('insumos')">Insumos</button>
+      <button class="cal-view-tab admin-only" id="prodTabStock" onclick="switchProductosTab('stock')">Stock <span id="stockBadge" style="display:none;background:var(--red);color:white;border-radius:99px;font-size:.6rem;font-weight:700;padding:1px 5px;vertical-align:middle">!</span></button>
+    </div>
+    <div id="prodTabActionWrap"></div>
   </div>
-  <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Producto</th><th>Categoría</th><th>Descripción</th><th>Precio</th><th></th></tr></thead><tbody id="productosTbody"></tbody></table></div></div></div>
+  <!-- Catálogo -->
+  <div id="prodSecCatalogo">
+    <div class="search-bar">
+      <input class="search-input" type="text" placeholder="Buscar producto..." id="productosSearch" oninput="renderProductos()">
+      <button class="btn btn-secondary btn-sm" onclick="abrirImportModal('productos')">📥 Importar Excel</button>
+    </div>
+    <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Producto</th><th>Categoría</th><th>Descripción</th><th>Precio</th><th></th></tr></thead><tbody id="productosTbody"></tbody></table></div></div></div>
+  </div>
+  <!-- Insumos -->
+  <div id="prodSecInsumos" style="display:none">
+    <div class="search-bar">
+      <input class="search-input" type="text" placeholder="Buscar insumo..." id="insumosSearch" oninput="renderInsumos()">
+      <select id="insumosCatFilter" class="field" style="width:180px;margin:0" onchange="renderInsumos()">
+        <option value="">Todas las categorías</option>
+        <option>Cremas y Aceites</option><option>Descartables</option><option>Agujas y Cánulas</option>
+        <option>Higiene y Desinfección</option><option>Equipamiento Menor</option><option>Otros</option>
+      </select>
+    </div>
+    <div id="insumosBajoStock" style="display:none;margin-bottom:12px"></div>
+    <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Insumo</th><th>Categoría</th><th>Stock Actual</th><th>Stock Mínimo</th><th>Unidad</th><th>Proveedor</th><th>Notas</th><th></th></tr></thead><tbody id="insumosTbody"></tbody></table></div></div></div>
+  </div>
+  <!-- Stock -->
+  <div id="prodSecStock" style="display:none">
+    <div class="search-bar"><input class="search-input" type="text" placeholder="Buscar en stock..." id="stockSearch" oninput="renderStock()"></div>
+    <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mínimo</th><th>Precio</th><th></th></tr></thead><tbody id="stockTbody"></tbody></table></div></div></div>
+  </div>
 </div>
 
 <!-- COMBOS -->
@@ -398,12 +425,6 @@ tr:hover td{background:var(--gray-50)}
   </div>
 </div>
 
-<!-- STOCK -->
-<div class="page admin-only" id="pageStock">
-  <div class="search-bar"><input class="search-input" type="text" placeholder="Buscar producto..." id="stockSearch" oninput="renderStock()"></div>
-  <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mínimo</th><th>Precio</th><th></th></tr></thead><tbody id="stockTbody"></tbody></table></div></div></div>
-</div>
-
 <!-- REPORTES -->
 <div class="page admin-only" id="pageReportes">
   <div style="margin-bottom:20px"><button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir / PDF</button></div>
@@ -437,24 +458,6 @@ tr:hover td{background:var(--gray-50)}
       </div>
     </div>
   </div>
-</div>
-
-<!-- INSUMOS -->
-<div class="page" id="pageInsumos">
-  <div class="search-bar">
-    <input class="search-input" type="text" placeholder="Buscar insumo..." id="insumosSearch" oninput="renderInsumos()">
-    <select id="insumosCatFilter" class="field" style="width:180px;margin:0" onchange="renderInsumos()">
-      <option value="">Todas las categorías</option>
-      <option>Cremas y Aceites</option>
-      <option>Descartables</option>
-      <option>Agujas y Cánulas</option>
-      <option>Higiene y Desinfección</option>
-      <option>Equipamiento Menor</option>
-      <option>Otros</option>
-    </select>
-  </div>
-  <div id="insumosBajoStock" style="display:none;margin-bottom:12px"></div>
-  <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Insumo</th><th>Categoría</th><th>Stock Actual</th><th>Stock Mínimo</th><th>Unidad</th><th>Proveedor</th><th>Notas</th><th></th></tr></thead><tbody id="insumosTbody"></tbody></table></div></div></div>
 </div>
 
 <!-- CALENDARIO -->
@@ -703,7 +706,7 @@ const PAGE_CFG = {
   clientes:   { title:'Clientes',    action:'+ Nuevo Cliente',  fn:'openModalCliente' },
   equipo:     { title:'Equipo',      action:'+ Nueva Empleada', fn:'openModalEmpleado' },
   servicios:  { title:'Servicios',   action:'+ Nuevo Servicio', fn:'openModalServicio' },
-  productos:  { title:'Productos',   action:'+ Nuevo Producto', fn:'openModalProducto' },
+  productos:  { title:'Productos',   action:'',                 fn:'noop' },
   combos:     { title:'Combos',      action:'+ Nuevo Combo',    fn:'openModalCombo' },
   caja:       { title:'Caja Diaria', action:'+ Movimiento',     fn:'openModalCaja' },
   gastos:     { title:'Gastos',      action:'+ Nuevo Gasto',    fn:'openModalGasto' },
@@ -1402,11 +1405,42 @@ function saveServicio(){
 // ═══════════════════════════════════════════════════════════════════════
 // PRODUCTOS
 // ═══════════════════════════════════════════════════════════════════════
-function renderProductos(){const q=(document.getElementById('productosSearch')||{}).value?.toLowerCase()||'';let list=(S.get('productos')||[]).filter(p=>!q||p.nombre.toLowerCase().includes(q));const tbody=document.getElementById('productosTbody');if(!tbody)return;if(!list.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🛍️</div><p>Sin productos. Usá "+ Nuevo Producto" o importá desde Excel.</p></div></td></tr>';return;}tbody.innerHTML=list.map(p=>'<tr><td><strong>'+p.nombre+'</strong></td><td>'+(p.categoria||'–')+'</td><td style="font-size:.8rem;color:var(--gray-500)">'+(p.descripcion||'–')+'</td><td>'+fmt(p.precio)+'</td><td><button class="action-btn" onclick="editProducto('+p.id+')">✏️</button><button class="action-btn" onclick="deleteProducto('+p.id+')">🗑️</button></td></tr>').join('');}
+let _prodTab='catalogo';
+function renderProductos(){
+  // Dispatcher: renders whatever tab is currently active
+  // Called on page entry AND from the search input (always on catalogo tab when visible)
+  _renderProdTabAction();
+  if(_prodTab==='catalogo') _renderCatalogo();
+  else if(_prodTab==='insumos') renderInsumos();
+  else if(_prodTab==='stock') renderStock();
+}
+function switchProductosTab(tab){
+  _prodTab=tab;
+  ['catalogo','insumos','stock'].forEach(t=>{
+    const btn=document.getElementById('prodTab'+t.charAt(0).toUpperCase()+t.slice(1));
+    const sec=document.getElementById('prodSec'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(btn)btn.classList.toggle('active',t===tab);
+    if(sec)sec.style.display=t===tab?'':'none';
+  });
+  _renderProdTabAction();
+  if(tab==='catalogo') _renderCatalogo();
+  else if(tab==='insumos') renderInsumos();
+  else if(tab==='stock') renderStock();
+}
+function _renderProdTabAction(){
+  const wrap=document.getElementById('prodTabActionWrap'); if(!wrap)return;
+  const cfg={
+    catalogo:'<button class="btn btn-primary btn-sm" onclick="openModalProducto()">+ Nuevo Producto</button>',
+    insumos: '<button class="btn btn-primary btn-sm" onclick="openModalInsumo()">+ Nuevo Insumo</button>',
+    stock:   '<button class="btn btn-primary btn-sm" onclick="openModalStock()">+ Producto</button>',
+  };
+  wrap.innerHTML=cfg[_prodTab]||'';
+}
+function _renderCatalogo(){const q=(document.getElementById('productosSearch')||{}).value?.toLowerCase()||'';let list=(S.get('productos')||[]).filter(p=>!q||p.nombre.toLowerCase().includes(q));const tbody=document.getElementById('productosTbody');if(!tbody)return;if(!list.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🛍️</div><p>Sin productos. Usá "+ Nuevo Producto" o importá desde Excel.</p></div></td></tr>';return;}tbody.innerHTML=list.map(p=>'<tr><td><strong>'+p.nombre+'</strong></td><td>'+(p.categoria||'–')+'</td><td style="font-size:.8rem;color:var(--gray-500)">'+(p.descripcion||'–')+'</td><td>'+fmt(p.precio)+'</td><td><button class="action-btn" onclick="editProducto('+p.id+')">✏️</button><button class="action-btn" onclick="deleteProducto('+p.id+')">🗑️</button></td></tr>').join('');}
 function openModalProducto(){document.getElementById('modalProductoId').value='';document.getElementById('modalProductoNombre').value='';document.getElementById('modalProductoCategoria').value='';document.getElementById('modalProductoDescripcion').value='';document.getElementById('modalProductoPrecio').value='';openModal('modalProducto');}
 function editProducto(id){const p=(S.get('productos')||[]).find(x=>x.id===id);if(!p)return;document.getElementById('modalProductoId').value=id;document.getElementById('modalProductoNombre').value=p.nombre||'';document.getElementById('modalProductoCategoria').value=p.categoria||'';document.getElementById('modalProductoDescripcion').value=p.descripcion||'';document.getElementById('modalProductoPrecio').value=p.precio||0;openModal('modalProducto');}
-function deleteProducto(id){if(!confirm('¿Eliminar producto?'))return;S.set('productos',(S.get('productos')||[]).filter(p=>p.id!==id));renderProductos();showToast('Eliminado');}
-function saveProducto(){const id=parseInt(document.getElementById('modalProductoId').value)||null;const obj={id:id||Date.now(),nombre:document.getElementById('modalProductoNombre').value.trim(),categoria:document.getElementById('modalProductoCategoria').value.trim(),descripcion:document.getElementById('modalProductoDescripcion').value.trim(),precio:parseFloat(document.getElementById('modalProductoPrecio').value)||0};if(!obj.nombre){showToast('Nombre requerido','error');return;}let list=S.get('productos')||[];if(id){list=list.map(p=>p.id===id?obj:p);}else list.push(obj);S.set('productos',list);closeModal('modalProducto');showToast('Producto guardado','success');renderProductos();}
+function deleteProducto(id){if(!confirm('¿Eliminar producto?'))return;S.set('productos',(S.get('productos')||[]).filter(p=>p.id!==id));_renderCatalogo();showToast('Eliminado');}
+function saveProducto(){const id=parseInt(document.getElementById('modalProductoId').value)||null;const obj={id:id||Date.now(),nombre:document.getElementById('modalProductoNombre').value.trim(),categoria:document.getElementById('modalProductoCategoria').value.trim(),descripcion:document.getElementById('modalProductoDescripcion').value.trim(),precio:parseFloat(document.getElementById('modalProductoPrecio').value)||0};if(!obj.nombre){showToast('Nombre requerido','error');return;}let list=S.get('productos')||[];if(id){list=list.map(p=>p.id===id?obj:p);}else list.push(obj);S.set('productos',list);closeModal('modalProducto');showToast('Producto guardado','success');_renderCatalogo();}
 
 // ═══════════════════════════════════════════════════════════════════════
 // COMBOS
