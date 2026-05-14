@@ -245,8 +245,7 @@ tr:hover td{background:var(--gray-50)}
     <div class="nav-item" data-page="combos"><span class="icon">🎁</span>Combos</div>
     <div class="nav-item" data-page="insumos"><span class="icon">🧴</span>Insumos</div>
     <div class="nav-section admin-only">Finanzas</div>
-    <div class="nav-item admin-only" data-page="caja"><span class="icon">💵</span>Caja</div>
-    <div class="nav-item admin-only" data-page="gastos"><span class="icon">📤</span>Gastos</div>
+    <div class="nav-item admin-only" data-page="finanzas"><span class="icon">💰</span>Finanzas</div>
     <div class="nav-item admin-only" data-page="stock"><span class="icon">📦</span>Stock<span class="nav-badge" id="stockBadge" style="display:none">!</span></div>
     <div class="nav-item admin-only" data-page="reportes"><span class="icon">📈</span>Reportes</div>
     <div class="nav-section admin-only">Marketing</div>
@@ -346,22 +345,57 @@ tr:hover td{background:var(--gray-50)}
 </div>
 
 <!-- CAJA -->
-<div class="page admin-only" id="pageCaja">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-    <input type="date" id="cajaFechaFiltro" class="field" style="width:180px;margin:0" onchange="renderCaja()">
-    <button class="btn btn-secondary btn-sm" onclick="cajaHoy()">Hoy</button>
+<!-- FINANZAS -->
+<div class="page admin-only" id="pageFinanzas">
+  <div class="cal-view-tabs" style="margin-bottom:18px">
+    <button class="cal-view-tab active" id="finTabResumen" onclick="switchFinanzasTab('resumen')">Resumen</button>
+    <button class="cal-view-tab" id="finTabIngresos" onclick="switchFinanzasTab('ingresos')">Ingresos</button>
+    <button class="cal-view-tab" id="finTabEgresos" onclick="switchFinanzasTab('egresos')">Egresos</button>
   </div>
-  <div class="caja-summary">
-    <div class="caja-box"><div style="font-size:.78rem;color:var(--gray-500);font-weight:600">INGRESOS</div><div class="caja-val" style="color:var(--green)" id="cajaSumaIngresos">$0</div></div>
-    <div class="caja-box"><div style="font-size:.78rem;color:var(--gray-500);font-weight:600">EGRESOS</div><div class="caja-val" style="color:var(--red)" id="cajaSumaEgresos">$0</div></div>
-    <div class="caja-box"><div style="font-size:.78rem;color:var(--gray-500);font-weight:600">BALANCE</div><div class="caja-val" id="cajaSumaNeto">$0</div></div>
-  </div>
-  <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Monto</th><th>Método</th><th></th></tr></thead><tbody id="cajaTbody"></tbody></table></div></div></div>
-</div>
 
-<!-- GASTOS -->
-<div class="page admin-only" id="pageGastos">
-  <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Monto</th><th>Método</th><th></th></tr></thead><tbody id="gastosTbody"></tbody></table></div></div></div>
+  <!-- RESUMEN -->
+  <div id="finSecResumen">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-sm" onclick="finNavMes(-1)">◀</button>
+      <span id="finMesTitulo" style="font-weight:700;font-size:1rem;min-width:170px;text-align:center"></span>
+      <button class="btn btn-secondary btn-sm" onclick="finNavMes(1)">▶</button>
+      <button class="btn btn-secondary btn-sm" onclick="finIrHoy()">Este mes</button>
+    </div>
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+      <div class="stat-card"><div class="stat-icon" style="background:var(--green-light)">💰</div><div class="stat-info"><div class="stat-label">Ingresos del Mes</div><div class="stat-value" id="finIngMes">$0</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:var(--red-light)">💸</div><div class="stat-info"><div class="stat-label">Egresos del Mes</div><div class="stat-value" id="finEgMes">$0</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:var(--blue-light)">📊</div><div class="stat-info"><div class="stat-label">Balance del Mes</div><div class="stat-value" id="finBalMes">$0</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:var(--primary-light)">📅</div><div class="stat-info"><div class="stat-label">Balance del Año</div><div class="stat-value" id="finBalAnio">$0</div></div></div>
+    </div>
+    <div class="grid-2" style="align-items:start">
+      <div class="card"><div class="card-header"><span class="card-title">Evolución mensual</span></div><div class="card-body"><div style="height:220px"><canvas id="finChart"></canvas></div></div></div>
+      <div class="card"><div class="card-header"><span class="card-title">Egresos por categoría</span></div><div class="card-body" id="finCatBreakdown" style="padding:14px 16px"></div></div>
+    </div>
+  </div>
+
+  <!-- INGRESOS -->
+  <div id="finSecIngresos" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <input type="month" id="finIngMesFiltro" class="field" style="width:180px;margin:0" onchange="renderIngresosTab()">
+      <button class="btn btn-primary" onclick="openModalIngreso()">+ Nuevo Ingreso</button>
+    </div>
+    <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap">
+      <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Cliente</th><th>Monto</th><th>Método</th><th></th></tr></thead>
+      <tbody id="finIngresosTbody"></tbody></table>
+    </div></div></div>
+  </div>
+
+  <!-- EGRESOS -->
+  <div id="finSecEgresos" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <input type="month" id="finEgMesFiltro" class="field" style="width:180px;margin:0" onchange="renderEgresosTab()">
+      <button class="btn btn-primary" onclick="openModalEgreso()">+ Nuevo Egreso</button>
+    </div>
+    <div class="card"><div class="card-body" style="padding:0"><div class="table-wrap">
+      <table><thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Monto</th><th>Método</th><th></th></tr></thead>
+      <tbody id="finEgresosTbody"></tbody></table>
+    </div></div></div>
+  </div>
 </div>
 
 <!-- STOCK -->
@@ -427,7 +461,8 @@ tr:hover td{background:var(--gray-50)}
 <div class="page" id="pageCalendario">
   <div class="cal-top-bar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
     <div class="cal-view-tabs">
-      <button class="cal-view-tab active" id="calTabSemana" onclick="setCalView('semana')">Semana</button>
+      <button class="cal-view-tab active" id="calTabDia" onclick="setCalView('dia')">Día</button>
+      <button class="cal-view-tab" id="calTabSemana" onclick="setCalView('semana')">Semana</button>
       <button class="cal-view-tab" id="calTabMes" onclick="setCalView('mes')">Mes</button>
     </div>
     <select id="calProfFiltro" class="field" style="width:190px;margin:0;font-size:.82rem" onchange="renderCalendario()"><option value="">Todas las profesionales</option></select>
@@ -1447,7 +1482,7 @@ function saveInsumo(){
 // ═══════════════════════════════════════════════════════════════════════
 // CALENDARIO — vistas Día / Semana / Mes
 // ═══════════════════════════════════════════════════════════════════════
-let _calView='semana';
+let _calView='dia';
 let _calRef=new Date(); // fecha de referencia
 
 const CAL_HORA_INI=8, CAL_HORA_FIN=21, CAL_PX_MIN=2; // 2px por minuto → bloques más grandes
@@ -1458,7 +1493,7 @@ const CAL_TOTAL_H=calPx((CAL_HORA_FIN-CAL_HORA_INI)*60);
 
 function setCalView(v){
   _calView=v;
-  ['semana','mes'].forEach(x=>{
+  ['dia','semana','mes'].forEach(x=>{
     const el=document.getElementById('calTab'+x.charAt(0).toUpperCase()+x.slice(1));
     if(el)el.classList.toggle('active',x===v);
   });
@@ -1466,18 +1501,21 @@ function setCalView(v){
 }
 function calHoy(){ _calRef=new Date(); renderCalendario(); }
 function calNavPrev(){
-  if(_calView==='semana') _calRef=new Date(_calRef.getTime()-7*86400000);
+  if(_calView==='dia') _calRef=new Date(_calRef.getTime()-86400000);
+  else if(_calView==='semana') _calRef=new Date(_calRef.getTime()-7*86400000);
   else { _calRef.setMonth(_calRef.getMonth()-1); _calRef=new Date(_calRef); }
   renderCalendario();
 }
 function calNavNext(){
-  if(_calView==='semana') _calRef=new Date(_calRef.getTime()+7*86400000);
+  if(_calView==='dia') _calRef=new Date(_calRef.getTime()+86400000);
+  else if(_calView==='semana') _calRef=new Date(_calRef.getTime()+7*86400000);
   else { _calRef.setMonth(_calRef.getMonth()+1); _calRef=new Date(_calRef); }
   renderCalendario();
 }
 function renderCalendario(){
   _actualizarFiltroProf();
   if(_calView==='mes') _calMes();
+  else if(_calView==='dia') _calDia();
   else _calSemana();
 }
 function _actualizarFiltroProf(){
